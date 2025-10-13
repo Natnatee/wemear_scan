@@ -11,7 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
-
+id_rsa_wemear_scan
+id_rsa_wemear_scan.pub
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

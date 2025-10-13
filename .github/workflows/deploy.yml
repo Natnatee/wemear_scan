@@ -1,0 +1,41 @@
+name: Deploy wemear_scan
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # --- ส่วนสำคัญ: SSH และ Deployment ---
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "Starting deployment on server with user 'developer' permissions."
+            cd /home/developer/wemear_scan
+
+            # 1. ดึงโค้ดล่าสุดจาก GitHub
+            git pull origin main 
+
+            # 2. โหลด nvm และ Node เวอร์ชันที่ติดตั้ง
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm use 20
+
+            # 3. ติดตั้ง pnpm (ถ้ายังไม่มี) และ Dependencies
+            npm install -g pnpm
+            pnpm install        
+            pnpm run build      
+
+            # 4. รีโหลด Nginx
+            sudo systemctl reload nginx
+            echo "Deployment successful and Nginx reloaded."
