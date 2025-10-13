@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test 3D Model Render</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: #ffffff;
+      }
+      canvas {
+        width: 100%;
+        height: 100vh;
+        display: block;
+      }
+      #error-message {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        background: #ff4d4d;
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        display: none;
+      }
+    </style>
+    <!-- Import Three.js dependencies as ES modules -->
+    <!-- Import the model viewer module -->
+  </head>
+  <body>
+    <canvas id="model-canvas"></canvas>
+    <script src="/public/modelViewer.js"></script>
+    <script>
+      initModelViewer([
+        {
+          src: "https://msdwbkeszkklbelimvaw.supabase.co/storage/v1/object/assets/car.glb",
+          type: "3D Model",
+          scale: [0.5, 0.5, 0.5],
+          position: [0, 0, 0],
+          rotation: [0, 0, 0],
+        },
+        {
+          src: "/public/robot.glb",
+          type: "3D Model",
+          scale: [1, 1, 1],
+          position: [1.5, 0, 0],
+          rotation: [0, 180, 0],
+        },
+        {
+          src: "/public/flower.mp4",
+          type: "Video",
+          scale: [1, 1, 1],
+          position: [0, 0, -1],
+          rotation: [0, 0, 0],
+        },
+        {
+          src: "/public/Hardisk.jpg",
+          type: "Image",
+          scale: [1, 1, 1],
+          position: [0, 0, 0],
+          rotation: [0, 0, 0],
+        },
+      ],"model-canvas");
+    </script>
+  </body>
+</html>

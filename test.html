@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test 3D Model Render</title>
+    <!-- เพิ่ม favicon เพื่อป้องกัน 404 -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: #808080; /* พื้นหลังสีเทา */
+      }
+      canvas {
+        width: 100%;
+        height: 100vh;
+        display: block;
+      }
+      #error-message {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        background: #ff4d4d;
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        display: none;
+      }
+    </style>
+    <!-- รวม Three.js, GLTFLoader และ OrbitControls จาก CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+  </head>
+  <body>
+    <canvas id="model-canvas"></canvas>
+    <div id="error-message"></div>
+    <script src="modelViewer.js"></script>
+    <script>
+      // กำหนดค่าเริ่มต้นสำหรับโมเดล
+      const modelConfig = {
+        src: "/public/robot.glb",
+        scale: { x: 1, y: 1, z: 1 },
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+      };
+      // เรียกใช้ฟังก์ชันจาก modelViewer.js
+      initModelViewer(modelConfig);
+    </script>
+  </body>
+</html>
