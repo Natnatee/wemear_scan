@@ -5,8 +5,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: 'index.html',
-        multi: 'multi-target.html',
-        dashboard: 'admin.html'
       }
     }
   }
