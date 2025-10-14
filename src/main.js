@@ -6,31 +6,22 @@ import { convertToAframe } from './utils/threeToAframe.js';
  * IndexedDB asset caching utilities
  */
 import { fetchAndCacheAsset } from './utils/idbAsset.js';
+/**
+ * Data format conversion utilities
+ */
+import { convertToLegacyFormat } from './utils/convertData.js';
+/**
+ * Sample project data for testing
+ */
+import { sampleProjects } from './make_data/sample_project2.js';
 
 async function initAR() {
-  const url =
-    "https://msdwbkeszkklbelimvaw.supabase.co/rest/v1/ARData?id=eq.4dce27a0-486c-4d87-a0b7-7c6b66dd210e";
-  const apiKey = "sb_publishable_r3PnOOMf8ORPxaYZnu2sPg_C81V5KN8";
-
   try {
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        apikey: apiKey,
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
-    const data = await response.json();
-    const arData = data[0];
-    if (!arData || !arData["image tracking"] || !arData.mindFile)
-      throw new Error("Invalid data structure from Supabase.");
-
-    const targets = arData["image tracking"];
-    const mindFile = arData.mindFile;
+    // แปลงข้อมูลจากรูปแบบใหม่เป็นรูปแบบเก่า
+    const legacyData = convertToLegacyFormat(sampleProjects[0]);
+    console.log(legacyData);
+    const targets = legacyData["image tracking"];
+    const mindFile = legacyData.mindFile;
 
     const scene = document.createElement("a-scene");
     scene.setAttribute(
@@ -165,7 +156,7 @@ async function initAR() {
       document.getElementById("status").innerText = "AR พร้อมใช้งาน!";
     });
   } catch (error) {
-    console.error("Failed to fetch AR data:", error);
+    console.error("Failed to initialize AR:", error);
   }
 }
 
