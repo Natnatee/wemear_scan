@@ -55,7 +55,8 @@ export function convertToLegacyFormat(newData) {
         type: assetInfo.type,
         scale: asset.scale,
         position: asset.position,
-        rotation: asset.rotation
+        rotation: asset.rotation,
+        action: asset.action
       };
 
       // เพิ่ม properties เพิ่มเติมสำหรับ video
