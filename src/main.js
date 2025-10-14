@@ -1,3 +1,12 @@
+/**
+ * Utility functions for converting Three.js values to A-Frame format
+ */
+import { convertToAframe } from './utils/threeToAframe.js';
+/**
+ * IndexedDB asset caching utilities
+ */
+import { fetchAndCacheAsset } from './utils/idbAsset.js';
+
 async function initAR() {
   const url =
     "https://msdwbkeszkklbelimvaw.supabase.co/rest/v1/ARData?id=eq.4dce27a0-486c-4d87-a0b7-7c6b66dd210e";
@@ -83,12 +92,17 @@ async function initAR() {
       const entity = document.createElement("a-entity");
       entity.setAttribute("mindar-image-target", `targetIndex: ${targetIndex}`);
 
-      models.forEach((t, modelIdx) => {
+      for (let modelIdx = 0; modelIdx < models.length; modelIdx++) {
+        const t = models[modelIdx];
+
         // Video
         if (t.type === "Video") {
+          const videoBlob = await fetchAndCacheAsset(t.src);
+          const videoUrl = URL.createObjectURL(videoBlob);
+
           const video = document.createElement("video");
           video.id = `video-${targetIndex}-${modelIdx}`;
-          video.src = t.src;
+          video.src = videoUrl;
           video.autoplay = t.autoplay ?? false;
           video.loop = t.loop ?? false;
           video.muted = t.muted ?? true;
@@ -97,24 +111,27 @@ async function initAR() {
 
           const videoEl = document.createElement("a-video");
           videoEl.setAttribute("src", `#video-${targetIndex}-${modelIdx}`);
-          videoEl.setAttribute("scale", t.scale.join(" "));
-          videoEl.setAttribute("position", t.position.join(" "));
+          videoEl.setAttribute("scale", convertToAframe(t.scale, 'scale'));
+          videoEl.setAttribute("position", convertToAframe(t.position, 'position'));
           videoEl.setAttribute(
             "rotation",
-            t.rotation ? t.rotation.join(" ") : "0 0 0"
+            t.rotation ? convertToAframe(t.rotation, 'rotation') : "0 0 0"
           );
           entity.appendChild(videoEl);
         }
 
         // 3D Model
         if (t.type === "3D Model") {
+          const modelBlob = await fetchAndCacheAsset(t.src);
+          const modelUrl = URL.createObjectURL(modelBlob);
+
           const model = document.createElement("a-gltf-model");
-          model.setAttribute("src", t.src);
-          model.setAttribute("scale", t.scale.join(" "));
-          model.setAttribute("position", t.position.join(" "));
+          model.setAttribute("src", modelUrl);
+          model.setAttribute("scale", convertToAframe(t.scale, 'scale'));
+          model.setAttribute("position", convertToAframe(t.position, 'position'));
           model.setAttribute(
             "rotation",
-            t.rotation ? t.rotation.join(" ") : "0 0 0"
+            t.rotation ? convertToAframe(t.rotation, 'rotation') : "0 0 0"
           );
           entity.appendChild(model);
         }
@@ -123,16 +140,16 @@ async function initAR() {
         if (t.type === "Image") {
           const img = document.createElement("a-image");
           img.setAttribute("src", t.src);
-          img.setAttribute("scale", t.scale.join(" "));
-          img.setAttribute("position", t.position.join(" "));
+          img.setAttribute("scale", convertToAframe(t.scale, 'scale'));
+          img.setAttribute("position", convertToAframe(t.position, 'position'));
           img.setAttribute(
             "rotation",
-            t.rotation ? t.rotation.join(" ") : "0 0 0"
+            t.rotation ? convertToAframe(t.rotation, 'rotation') : "0 0 0"
           );
           if (t.opacity !== undefined) img.setAttribute("opacity", t.opacity);
           entity.appendChild(img);
         }
-      });
+      }
 
       scene.appendChild(entity);
       targetIndex++;
