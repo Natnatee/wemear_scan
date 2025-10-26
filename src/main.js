@@ -1,19 +1,19 @@
 /**
  * Utility functions for converting Three.js values to A-Frame format
  */
-import { convertToAframe } from './utils/threeToAframe.js';
+import { convertToAframe } from "./utils/threeToAframe.js";
 /**
  * IndexedDB asset caching utilities
  */
-import { fetchAndCacheAsset } from './utils/idbAsset.js';
+import { fetchAndCacheAsset } from "./utils/idbAsset.js";
 /**
  * Data format conversion utilities
  */
-import { convertToLegacyFormat } from './utils/convertData.js';
+import { convertToLegacyFormat } from "./utils/convertData2.js";
 /**
  * Sample project data for testing
  */
-import { sampleProjects } from './make_data/sample_project2.js';
+import { sampleProjects } from "./make_data/make_project_no_share_asset.js";
 
 async function initAR() {
   try {
@@ -102,11 +102,14 @@ async function initAR() {
 
           const videoEl = document.createElement("a-video");
           videoEl.setAttribute("src", `#video-${targetIndex}-${modelIdx}`);
-          videoEl.setAttribute("scale", convertToAframe(t.scale, 'scale'));
-          videoEl.setAttribute("position", convertToAframe(t.position, 'position'));
+          videoEl.setAttribute("scale", convertToAframe(t.scale, "scale"));
+          videoEl.setAttribute(
+            "position",
+            convertToAframe(t.position, "position")
+          );
           videoEl.setAttribute(
             "rotation",
-            t.rotation ? convertToAframe(t.rotation, 'rotation') : "0 0 0"
+            t.rotation ? convertToAframe(t.rotation, "rotation") : "0 0 0"
           );
           entity.appendChild(videoEl);
         }
@@ -118,11 +121,14 @@ async function initAR() {
 
           const model = document.createElement("a-gltf-model");
           model.setAttribute("src", modelUrl);
-          model.setAttribute("scale", convertToAframe(t.scale, 'scale'));
-          model.setAttribute("position", convertToAframe(t.position, 'position'));
+          model.setAttribute("scale", convertToAframe(t.scale, "scale"));
+          model.setAttribute(
+            "position",
+            convertToAframe(t.position, "position")
+          );
           model.setAttribute(
             "rotation",
-            t.rotation ? convertToAframe(t.rotation, 'rotation') : "0 0 0"
+            t.rotation ? convertToAframe(t.rotation, "rotation") : "0 0 0"
           );
           entity.appendChild(model);
         }
@@ -131,11 +137,11 @@ async function initAR() {
         if (t.type === "Image") {
           const img = document.createElement("a-image");
           img.setAttribute("src", t.src);
-          img.setAttribute("scale", convertToAframe(t.scale, 'scale'));
-          img.setAttribute("position", convertToAframe(t.position, 'position'));
+          img.setAttribute("scale", convertToAframe(t.scale, "scale"));
+          img.setAttribute("position", convertToAframe(t.position, "position"));
           img.setAttribute(
             "rotation",
-            t.rotation ? convertToAframe(t.rotation, 'rotation') : "0 0 0"
+            t.rotation ? convertToAframe(t.rotation, "rotation") : "0 0 0"
           );
           if (t.opacity !== undefined) img.setAttribute("opacity", t.opacity);
           entity.appendChild(img);
