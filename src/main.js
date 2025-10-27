@@ -11,7 +11,7 @@ import { fetchAndCacheAsset } from "./utils/idbAsset.js";
  */
 import { convertToLegacyFormat } from "./utils/convertData2.js";
 
-const SUPABASE_URL = "https://supabase.wemear.com/rest/v1/project";
+const SUPABASE_URL = "https://supabase.wemear.com/rest/v1/project_info";
 const SUPABASE_API_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzU2NTkyMDUzLCJleHAiOjIwODE1Nzc2MDB9.KjLYDG826zqcmxDIXIdnUvn-T_RVoSWyUFB-bA_Wm1E";
 
@@ -30,7 +30,7 @@ function getProjectIdFromUrl() {
  * ดึงข้อมูล project จาก Supabase API
  */
 async function fetchProjectData(projectId) {
-  const url = `${SUPABASE_URL}?select=*,project_info(info)&project_id=eq.${projectId}`;
+  const url = `${SUPABASE_URL}?project_id=eq.${projectId}`;
 
   console.log("Fetching from URL:", url);
 
@@ -54,33 +54,13 @@ async function fetchProjectData(projectId) {
   const data = await response.json();
   console.log("API Response Data:", data);
   console.log("Data length:", data.length);
-  if (data.length > 0) {
-    console.log("First project:", data[0]);
-    console.log("project_info:", data[0].project_info);
-  }
 
   if (!data || data.length === 0) {
     throw new Error(`Project not found with ID: ${projectId}\nURL: ${url}`);
   }
 
-  // แปลงโครงสร้างให้ตรงกับ make_project_no_share_asset
-  const project = data[0];
-
-  // ตรวจสอบว่ามี project_info หรือไม่
-  if (!project.project_info || project.project_info.length === 0) {
-    throw new Error(
-      `Project found but missing project_info data.\nProject: ${JSON.stringify(
-        project,
-        null,
-        2
-      )}`
-    );
-  }
-
-  return {
-    ...project,
-    info: project.project_info[0].info,
-  };
+  // ข้อมูลจาก project_info API มีโครงสร้างตรงกับ project_info.js
+  return data[0];
 }
 
 async function initAR() {
