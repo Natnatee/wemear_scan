@@ -63,8 +63,28 @@ async function fetchProjectData(projectId) {
   return data[0];
 }
 
+/**
+ * รอให้ A-Frame และ MindAR โหลดเสร็จ
+ */
+function waitForLibraries() {
+  return new Promise((resolve) => {
+    // ตรวจสอบว่า AFRAME และ MindAR โหลดเสร็จแล้วหรือยัง
+    const checkLibraries = setInterval(() => {
+      if (window.AFRAME && window.MINDAR && window.MINDAR.IMAGE) {
+        clearInterval(checkLibraries);
+        console.log("A-Frame and MindAR loaded successfully");
+        resolve();
+      }
+    }, 100);
+  });
+}
+
 async function initAR() {
   try {
+    // รอให้ libraries โหลดเสร็จก่อน
+    document.getElementById("status").innerText = "กำลังโหลด AR libraries...";
+    await waitForLibraries();
+
     // ดึง project_id จาก URL
     const projectId = getProjectIdFromUrl();
 
