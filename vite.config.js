@@ -15,7 +15,6 @@ export default defineConfig({
         location: resolve(__dirname, "location.html"),
         world: resolve(__dirname, "world.html"),
         "360": resolve(__dirname, "360.html"),
-        face2: resolve(__dirname, "face2.html"),
       },
     },
   },
