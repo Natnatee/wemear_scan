@@ -26,9 +26,22 @@
         position: absolute;
         overflow: hidden;
       }
+      #angle {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        background: rgba(0,0,0,0.6);
+        color: #fff;
+        padding: 6px 8px;
+        border-radius: 6px;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        font-size: 14px;
+        z-index: 9999;
+      }
     </style>
   </head>
   <body>
+    <div id="angle">Yaw: 0°</div>
     <div id="container">
       <a-scene
         mindar-face
@@ -42,22 +55,16 @@
           <!-- Glasses Model -->
           <a-asset-item
             id="glasses"
-            src="/public/face/glasses/source/Glasses.gltf"
+            src="/face/glasses/source/Glasses.gltf"
           ></a-asset-item>
           <!--  Hat Model -->
-          <a-asset-item
-            id="Hat"
-            src="/public/face/christmas_hat.glb"
-          ></a-asset-item>
+          <a-asset-item id="Hat" src="/face/christmas_hat.glb"></a-asset-item>
           <!--  earing Model -->
-          <a-asset-item
-            id="leftEarring"
-            src="/public/face/earring.glb"
-          ></a-asset-item>
+          <a-asset-item id="leftEarring" src="/face/earring.glb"></a-asset-item>
           <!--  beard Model -->
           <a-asset-item
             id="beard"
-            src="/public/face/blue-beard-cartoon-character-3d-model/source/blue beard.glb"
+            src="/face/blue-beard-cartoon-character-3d-model/source/blue beard.glb"
           ></a-asset-item>
         </a-assets>
 
@@ -133,7 +140,25 @@
       document.addEventListener("DOMContentLoaded", () => {
         const sceneEl = document.querySelector("a-scene");
 
-        sceneEl.addEventListener("renderstart", () => {});
+        sceneEl.addEventListener("renderstart", () => {
+          const label = document.getElementById("angle");
+          const getAnchor = () => document.querySelector('[mindar-face-target="anchorIndex: 10"]');
+          const toDeg = (rad) => (rad * 180 / Math.PI);
+          const THREE_NS = window.THREE || (window.AFRAME && window.AFRAME.THREE);
+          const q = new (THREE_NS ? THREE_NS.Quaternion : Function)(0,0,0,1);
+          const e = new (THREE_NS ? THREE_NS.Euler : Function)();
+          const tick = () => {
+            const anchor = getAnchor();
+            if (anchor && anchor.object3D && THREE_NS) {
+              // ใช้ world quaternion เพื่ออ่านการหมุนจริงจาก MindAR
+              anchor.object3D.getWorldQuaternion(q);
+              e.setFromQuaternion(q, 'YXZ');
+              const yaw = e.y; // radians
+              label.textContent = `Yaw: ${toDeg(yaw).toFixed(1)}°`;
+            }
+          };
+          setInterval(tick, 100);
+        });
 
         // แก้ปัญหาการ render
         window.addEventListener("resize", () => {
