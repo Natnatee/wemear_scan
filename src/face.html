@@ -39,70 +39,88 @@
         device-orientation-permission-ui="enabled: false"
       >
         <a-assets>
-          <!-- เพิ่ม assets ของคุณที่นี่ เช่น รูปภาพ, โมเดล 3D -->
-          <!-- <img id="texture" src="path/to/your/image.png" /> -->
-          <!-- <a-asset-item id="model" src="path/to/your/model.gltf"></a-asset-item> -->
+          <!-- Glasses Model -->
+          <a-asset-item
+            id="glasses"
+            src="../public/face/glasses/source/Glasses.gltf"
+          ></a-asset-item>
+          <!--  Hat Model -->
+          <a-asset-item
+            id="Hat"
+            src="../public/face/christmas_hat.glb"
+          ></a-asset-item>
+          <!--  earing Model -->
+          <a-asset-item
+            id="leftEarring"
+            src="../public/face/earring.glb"
+          ></a-asset-item>
+          <!--  beard Model -->
+          <a-asset-item
+            id="beard"
+            src="../public/face/blue-beard-cartoon-character-3d-model/source/blue beard.glb"
+          ></a-asset-item>
         </a-assets>
 
         <a-camera active="false" position="0 0 0"></a-camera>
 
-        <!-- Face anchor - จมูก (กลางหน้า) -->
-        <a-entity mindar-face-target="anchorIndex: 1">
-          <!-- ลูกบอลสีแดงที่จมูก -->
-          <a-sphere color="red" radius="0.1" position="0 0 0.1"> </a-sphere>
-        </a-entity>
-
-        <!-- หน้าผาก -->
+        <!-- Cowboy Hat ที่หัว -->
         <a-entity mindar-face-target="anchorIndex: 10">
-          <a-box
-            color="blue"
-            width="0.2"
-            height="0.1"
-            depth="0.05"
-            position="0 0 0.1"
+          <a-gltf-model
+            src="#Hat"
+            position="0 -2 -0.5"
+            scale="2 2 2"
+            rotation="0 0 0"
           >
-          </a-box>
+          </a-gltf-model>
         </a-entity>
 
-        <!-- แว่นตาเท่ๆ -->
+        <!-- Glasses ที่ตา -->
         <a-entity mindar-face-target="anchorIndex: 168">
-          <!-- กรอบซ้าย -->
-          <a-torus
-            color="black"
-            radius="0.06"
-            radius-tubular="0.01"
-            position="-0.06 0 0.05"
+          <a-gltf-model
+            src="#glasses"
+            position="0 0 0.1"
+            scale="0.5 0.5 0.5"
+            rotation="0 0 0"
           >
-          </a-torus>
-          <!-- กรอบขวา -->
-          <a-torus
-            color="black"
-            radius="0.06"
-            radius-tubular="0.01"
-            position="0.06 0 0.05"
-          >
-          </a-torus>
-          <!-- ขาแว่นกลาง -->
-          <a-box
-            color="black"
-            width="0.04"
-            height="0.01"
-            depth="0.01"
-            position="0 0 0.05"
-          >
-          </a-box>
+          </a-gltf-model>
         </a-entity>
+
+        <!-- ลูกบอลสีแดงที่จมูก (ตัวอย่าง - ลบได้) -->
+        <!-- <a-entity mindar-face-target="anchorIndex: 1">
+          <a-sphere color="red" radius="0.1" position="0 0 0.1"></a-sphere>
+        </a-entity> -->
 
         <!-- ปากหนวด -->
         <a-entity mindar-face-target="anchorIndex: 1">
-          <a-box
-            color="brown"
-            width="0.15"
-            height="0.05"
-            depth="0.02"
-            position="0 -0.12 0.08"
+          <a-gltf-model
+            src="#beard"
+            position="0 -0.4 -1.5"
+            scale="1.5 1.5 1.5"
+            rotation="0 0 0"
           >
-          </a-box>
+          </a-gltf-model>
+        </a-entity>
+
+        <!-- ต่างหูซ้าย -->
+        <a-entity id="leftEarringEntity" mindar-face-target="anchorIndex: 234">
+          <a-gltf-model
+            src="#leftEarring"
+            position="0.3 0 0"
+            scale="6 6 6"
+            rotation="0 0 0"
+          >
+          </a-gltf-model>
+        </a-entity>
+
+        <!-- ต่างหูขวา -->
+        <a-entity id="rightEarringEntity" mindar-face-target="anchorIndex: 454">
+          <a-gltf-model
+            src="#leftEarring"
+            position="-0.3 0 0"
+            scale="6 6 6"
+            rotation="0 0 0"
+          >
+          </a-gltf-model>
         </a-entity>
 
         <!-- แสงสว่าง -->
@@ -117,6 +135,11 @@
 
         sceneEl.addEventListener("renderstart", () => {
           console.log("MindAR Face Tracking started");
+          
+          // เริ่มตรวจสอบการหมุนของหน้าหลังจาก scene พร้อม
+          setTimeout(() => {
+            startEarringVisibilityCheck();
+          }, 1000);
         });
 
         // แก้ปัญหาการ render
@@ -129,6 +152,44 @@
           sceneEl.resize();
         }, 100);
       });
+
+      function startEarringVisibilityCheck() {
+        const faceEntity = document.querySelector('[mindar-face-target="anchorIndex: 10"]');
+        const leftEarringEntity = document.querySelector("#leftEarringEntity");
+        const rightEarringEntity = document.querySelector("#rightEarringEntity");
+
+        if (!faceEntity || !leftEarringEntity || !rightEarringEntity) {
+          console.log("Waiting for entities...");
+          setTimeout(startEarringVisibilityCheck, 500);
+          return;
+        }
+
+        console.log("Starting earring visibility check");
+
+        // เช็คทุก frame
+        setInterval(() => {
+          if (!faceEntity.object3D) return;
+          
+          const rotation = faceEntity.object3D.rotation;
+          const yRotation = rotation.y; // มุมหมุนซ้าย-ขวา
+
+          // หันขวา (มองเห็นหูขวา) → ซ่อนต่างหูซ้าย
+          if (yRotation > 0.5) {
+            leftEarringEntity.object3D.visible = false;
+            rightEarringEntity.object3D.visible = true;
+          }
+          // หันซ้าย (มองเห็นหูซ้าย) → ซ่อนต่างหูขวา
+          else if (yRotation < -0.5) {
+            leftEarringEntity.object3D.visible = true;
+            rightEarringEntity.object3D.visible = false;
+          }
+          // หันตรง → แสดงทั้ง 2 ข้าง
+          else {
+            leftEarringEntity.object3D.visible = true;
+            rightEarringEntity.object3D.visible = true;
+          }
+        }, 100);
+      }
     </script>
   </body>
 </html>
