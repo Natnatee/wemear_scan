@@ -108,16 +108,7 @@
           </a-gltf-model>
         </a-entity>
 
-        <!-- ต่างหูซ้าย -->
-        <a-entity id="leftEarringEntity" mindar-face-target="anchorIndex: 234">
-          <a-gltf-model
-            src="#leftEarring"
-            position="0.3 0 0"
-            scale="6 6 6"
-            rotation="0 0 0"
-          >
-          </a-gltf-model>
-        </a-entity>
+        <!-- ต่างหูซ้าย จะถูกสร้างด้วยสคริปต์ตามค่า yaw -->
 
         <!-- ต่างหูขวา -->
         <a-entity id="rightEarringEntity" mindar-face-target="anchorIndex: 454">
@@ -147,6 +138,26 @@
           const THREE_NS = window.THREE || (window.AFRAME && window.AFRAME.THREE);
           const q = new (THREE_NS ? THREE_NS.Quaternion : Function)(0,0,0,1);
           const e = new (THREE_NS ? THREE_NS.Euler : Function)();
+          const ensureLeftEarring = () => {
+            let left = document.getElementById('leftEarringEntity');
+            if (!left) {
+              left = document.createElement('a-entity');
+              left.setAttribute('id', 'leftEarringEntity');
+              left.setAttribute('mindar-face-target', 'anchorIndex: 234');
+              const model = document.createElement('a-gltf-model');
+              model.setAttribute('src', '#leftEarring');
+              model.setAttribute('position', '0.3 0 0');
+              model.setAttribute('scale', '6 6 6');
+              model.setAttribute('rotation', '0 0 0');
+              left.appendChild(model);
+              // append under scene
+              sceneEl.appendChild(left);
+            }
+          };
+          const removeLeftEarring = () => {
+            const left = document.getElementById('leftEarringEntity');
+            if (left && left.parentNode) left.parentNode.removeChild(left);
+          };
           const tick = () => {
             const anchor = getAnchor();
             if (anchor && anchor.object3D && THREE_NS) {
@@ -154,7 +165,13 @@
               anchor.object3D.getWorldQuaternion(q);
               e.setFromQuaternion(q, 'YXZ');
               const yaw = e.y; // radians
-              label.textContent = `Yaw: ${toDeg(yaw).toFixed(1)}°`;
+              const yawDeg = toDeg(yaw);
+              label.textContent = `Yaw: ${yawDeg.toFixed(1)}°`;
+              if (yawDeg > -5) {
+                ensureLeftEarring();
+              } else {
+                removeLeftEarring();
+              }
             }
           };
           setInterval(tick, 100);
