@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>MindAR + One Euro Filter Test</title>
+
+    <!-- A-Frame -->
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <!-- MindAR -->
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-aframe.prod.js"></script>
+
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        height: 100%;
+      }
+      #status {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 10px;
+        font-family: monospace;
+        z-index: 100;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="status">กำลังโหลด...</div>
+
+    <a-scene
+      mindar-image="imageTargetSrc: https://supabase.wemear.com/storage/v1/object/public/assets/mind/Test_2; autoStart: true; maxTrack: 1;"
+      embedded
+      color-space="sRGB"
+      renderer="colorManagement: true, physicallyCorrectLights: true"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: true"
+    >
+      <!-- กล้อง -->
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <!-- แสง -->
+      <a-entity light="type: ambient; color: #fff5cc; intensity: 2"></a-entity>
+      <a-entity
+        light="type: directional; color: #ffffff; intensity: 2"
+        position="5 10 5"
+      ></a-entity>
+
+      <!-- Assets -->
+      <a-assets timeout="30000">
+        <!-- Video -->
+        <video
+          id="video-professional"
+          src="https://supabase.wemear.com/storage/v1/object/public/assets/videos/Professional_Mode_Generated_Video (8).mp4"
+          loop="true"
+          muted="true"
+          playsinline
+          webkit-playsinline
+        ></video>
+
+        <!-- 3D Models -->
+        <a-asset-item
+          id="model-dee"
+          src="https://supabase.wemear.com/storage/v1/object/public/assets/3d/DEEbase_basic_pbr.glb"
+        ></a-asset-item>
+        <a-asset-item
+          id="model-men"
+          src="https://supabase.wemear.com/storage/v1/object/public/assets/3d/men2025.glb"
+        ></a-asset-item>
+      </a-assets>
+
+      <!-- Target 0: Multiple Assets (Image, Video, 2 Models) -->
+      <a-entity mindar-image-target="targetIndex: 0">
+        <!-- Image Asset -->
+        <a-image
+          src="https://supabase.wemear.com/storage/v1/object/public/assets/images/90x140Sri1.jpg"
+          position="0.7947 0 0"
+          scale="0.5 0.5 0.5"
+          opacity="1"
+        ></a-image>
+
+        <!-- Video Asset -->
+        <a-video
+          src="#video-professional"
+          position="-0.6182 -0.0883 0"
+          scale="0.5 0.5 0.5"
+          rotation="0 0 0"
+        ></a-video>
+
+        <!-- 3D Model 1: DEEbase -->
+        <a-gltf-model
+          src="#model-dee"
+          position="0.0089 0.1500 0"
+          scale="0.5 0.5 0.5"
+        ></a-gltf-model>
+
+        <!-- 3D Model 2: men2025 -->
+        <a-gltf-model
+          src="#model-men"
+          position="0 0 0"
+          scale="0.5 0.5 0.5"
+        ></a-gltf-model>
+      </a-entity>
+    </a-scene>
+
+    <!-- One Euro Filter + Smooth Tracking -->
+    <script>
+      // One Euro Filter (เหมือนเดิม)
+      const smoothingFactor = (te, cutoff) => {
+        const r = 2 * Math.PI * cutoff * te;
+        return r / (r + 1);
+      };
+      const exponentialSmoothing = (a, x, xPrev) => a * x + (1 - a) * xPrev;
+
+      class OneEuroFilter {
+        constructor({ minCutOff = 0.8, beta = 0.3, dCutOff = 1.0 }) {
+          this.minCutOff = minCutOff;
+          this.beta = beta;
+          this.dCutOff = dCutOff;
+          this.xPrev = null;
+          this.dxPrev = null;
+          this.tPrev = null;
+          this.initialized = false;
+        }
+        reset() {
+          this.initialized = false;
+          this.xPrev = null;
+          this.dxPrev = null;
+          this.tPrev = null;
+        }
+        filter(t, x) {
+          if (!this.initialized) {
+            this.initialized = true;
+            this.xPrev = [...x];
+            this.dxPrev = x.map(() => 0);
+            this.tPrev = t;
+            return [...x];
+          }
+          const te = t - this.tPrev;
+          if (te <= 0) return this.xPrev;
+          const ad = smoothingFactor(te, this.dCutOff);
+          const dx = x.map((val, i) => (val - this.xPrev[i]) / te);
+          const dxHat = dx.map((d, i) =>
+            exponentialSmoothing(ad, d, this.dxPrev[i])
+          );
+          const avgSpeed =
+            dxHat.reduce((a, b) => a + Math.abs(b), 0) / dxHat.length;
+          const cutoff = this.minCutOff + this.beta * avgSpeed;
+          const a = smoothingFactor(te, cutoff);
+          const xHat = x.map((val, i) =>
+            exponentialSmoothing(a, val, this.xPrev[i])
+          );
+          this.xPrev = xHat;
+          this.dxPrev = dxHat;
+          this.tPrev = t;
+          return xHat;
+        }
+      }
+
+      // เก็บ filter และเวลา
+      const filters = new Map();
+      const lastTimes = new Map();
+
+      // รอ scene โหลด
+      document.addEventListener("DOMContentLoaded", () => {
+        const sceneEl = document.querySelector("a-scene");
+
+        sceneEl.addEventListener("renderstart", () => {
+          document.getElementById("status").textContent = "กำลังเริ่มกล้อง...";
+        });
+
+        sceneEl.addEventListener("arReady", () => {
+          document.getElementById("status").textContent =
+            "AR พร้อม! ลองสแกนภาพ";
+          console.log("AR Ready");
+
+          const mindarSystem = sceneEl.components["mindar-image-system"];
+          if (!mindarSystem) {
+            console.error("MindAR system not found!");
+            return;
+          }
+
+          // สร้าง filter สำหรับ target 0
+          const filter = new OneEuroFilter({ minCutOff: 0.8, beta: 0.3 });
+          filters.set(0, filter);
+          lastTimes.set(0, performance.now() / 1000);
+
+          // ใช้ targetUpdate (สำคัญมาก!)
+          mindarSystem.registerCallback("targetUpdate", 0, (event) => {
+            const { modelViewMatrix } = event;
+            const t = performance.now() / 1000;
+            const dt = t - lastTimes.get(0);
+            lastTimes.set(0, t);
+
+            const matrix = new THREE.Matrix4().fromArray(modelViewMatrix);
+            const pos = new THREE.Vector3();
+            const quat = new THREE.Quaternion();
+            const scale = new THREE.Vector3();
+            matrix.decompose(pos, quat, scale);
+
+            const raw = [pos.x, pos.y, pos.z, quat.x, quat.y, quat.z, quat.w];
+            const filtered = filter.filter(dt, raw);
+            const [x, y, z, qx, qy, qz, qw] = filtered;
+
+            const targetEl = document.querySelector(
+              '[mindar-image-target="targetIndex: 0"]'
+            );
+            if (targetEl) {
+              targetEl.object3D.position.set(x, y, z);
+              targetEl.object3D.quaternion.set(qx, qy, qz, qw);
+            }
+          });
+
+          // targetFound / targetLost
+          mindarSystem.registerCallback("targetFound", 0, () => {
+            console.log("Target พบ!");
+            document.getElementById("status").textContent =
+              "พบ Target! ภาพนิ่งแล้ว";
+            const video = document.getElementById("video-professional");
+            if (video) video.play().catch(() => {});
+          });
+
+          mindarSystem.registerCallback("targetLost", 0, () => {
+            console.log("Target หาย");
+            document.getElementById("status").textContent =
+              "AR พร้อม! ลองสแกนภาพ";
+            filter.reset();
+            const video = document.getElementById("video-professional");
+            if (video) video.pause();
+          });
+        });
+
+        sceneEl.addEventListener("arError", (e) => {
+          console.error("AR Error:", e.detail);
+          document.getElementById("status").textContent =
+            "Error: " + e.detail.error;
+        });
+      });
+    </script>
+  </body>
+</html>
