@@ -42,22 +42,22 @@
           <!-- Glasses Model -->
           <a-asset-item
             id="glasses"
-            src="../public/face/glasses/source/Glasses.gltf"
+            src="/public/face/glasses/source/Glasses.gltf"
           ></a-asset-item>
           <!--  Hat Model -->
           <a-asset-item
             id="Hat"
-            src="../public/face/christmas_hat.glb"
+            src="/public/face/christmas_hat.glb"
           ></a-asset-item>
           <!--  earing Model -->
           <a-asset-item
             id="leftEarring"
-            src="../public/face/earring.glb"
+            src="/public/face/earring.glb"
           ></a-asset-item>
           <!--  beard Model -->
           <a-asset-item
             id="beard"
-            src="../public/face/blue-beard-cartoon-character-3d-model/source/blue beard.glb"
+            src="/public/face/blue-beard-cartoon-character-3d-model/source/blue beard.glb"
           ></a-asset-item>
         </a-assets>
 
@@ -133,14 +133,7 @@
       document.addEventListener("DOMContentLoaded", () => {
         const sceneEl = document.querySelector("a-scene");
 
-        sceneEl.addEventListener("renderstart", () => {
-          console.log("MindAR Face Tracking started");
-          
-          // เริ่มตรวจสอบการหมุนของหน้าหลังจาก scene พร้อม
-          setTimeout(() => {
-            startEarringVisibilityCheck();
-          }, 1000);
-        });
+        sceneEl.addEventListener("renderstart", () => {});
 
         // แก้ปัญหาการ render
         window.addEventListener("resize", () => {
@@ -152,44 +145,6 @@
           sceneEl.resize();
         }, 100);
       });
-
-      function startEarringVisibilityCheck() {
-        const faceEntity = document.querySelector('[mindar-face-target="anchorIndex: 10"]');
-        const leftEarringEntity = document.querySelector("#leftEarringEntity");
-        const rightEarringEntity = document.querySelector("#rightEarringEntity");
-
-        if (!faceEntity || !leftEarringEntity || !rightEarringEntity) {
-          console.log("Waiting for entities...");
-          setTimeout(startEarringVisibilityCheck, 500);
-          return;
-        }
-
-        console.log("Starting earring visibility check");
-
-        // เช็คทุก frame
-        setInterval(() => {
-          if (!faceEntity.object3D) return;
-          
-          const rotation = faceEntity.object3D.rotation;
-          const yRotation = rotation.y; // มุมหมุนซ้าย-ขวา
-
-          // หันขวา (มองเห็นหูขวา) → ซ่อนต่างหูซ้าย
-          if (yRotation > 0.5) {
-            leftEarringEntity.object3D.visible = false;
-            rightEarringEntity.object3D.visible = true;
-          }
-          // หันซ้าย (มองเห็นหูซ้าย) → ซ่อนต่างหูขวา
-          else if (yRotation < -0.5) {
-            leftEarringEntity.object3D.visible = true;
-            rightEarringEntity.object3D.visible = false;
-          }
-          // หันตรง → แสดงทั้ง 2 ข้าง
-          else {
-            leftEarringEntity.object3D.visible = true;
-            rightEarringEntity.object3D.visible = true;
-          }
-        }, 100);
-      }
     </script>
   </body>
 </html>

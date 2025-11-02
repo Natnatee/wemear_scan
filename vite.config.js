@@ -1,13 +1,16 @@
 import { defineConfig } from "vite";
+import { resolve } from "path";
 
 export default defineConfig({
   server: {
+    // Optional: helps with SPA routing if using client-side router
     historyApiFallback: true,
   },
   build: {
     rollupOptions: {
       input: {
-        main: "index.html",
+        main: resolve(__dirname, "index.html"),
+        face: resolve(__dirname, "face.html"),
       },
     },
   },
