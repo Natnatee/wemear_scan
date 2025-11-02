@@ -11,6 +11,10 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, "index.html"),
         face: resolve(__dirname, "face.html"),
+        image: resolve(__dirname, "image.html"),
+        location: resolve(__dirname, "location.html"),
+        world: resolve(__dirname, "world.html"),
+        "360": resolve(__dirname, "360.html"),
       },
     },
   },
