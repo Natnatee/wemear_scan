@@ -116,6 +116,7 @@ export async function renderImageTracking({ targets, mindFile, onReady }) {
 
         const model = document.createElement("a-gltf-model");
         model.setAttribute("src", modelUrl);
+        model.setAttribute("animation-mixer", "clip: *; loop: repeat; timeScale: 1");
         model.setAttribute("scale", convertToAframe(t.scale, "scale"));
         model.setAttribute("position", convertToAframe(t.position, "position"));
         model.setAttribute(
