@@ -7,7 +7,7 @@
     <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stats.js/16/Stats.min.js"></script>
     <script src="/src/src_mindar/image-target/aframe.js" type="module"></script>
-   
+
     <style>
       body {
         margin: 0;
@@ -23,23 +23,37 @@
 
   <body>
     <div class="example-container">
-      <a-scene mindar-image="imageTargetSrc: https://supabase.wemear.com/storage/v1/object/public/assets/mind/mindfile%20default; filterMinCF: 0.0001;
+      <a-scene
+        mindar-image="imageTargetSrc: https://supabase.wemear.com/storage/v1/object/public/assets/mind/mindfile%20default; filterMinCF: 0.0001;
     filterBeta: 0.0;
     warmupTolerance: 15;
     missTolerance: 15;
-    showStats: true" embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    showStats: true"
+        embedded
+        color-space="sRGB"
+        renderer="colorManagement: true, physicallyCorrectLights"
+        vr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: false"
+      >
         <a-assets>
           <img id="card" src="./assets/card-example/card.png" />
           <!-- <a-asset-item id="avatarModel" src="./assets/card-example/softmind/scene.gltf"></a-asset-item> -->
-          <a-asset-item id="avatarModel" src="https://supabase.wemear.com/storage/v1/object/public/assets/3d/men2025.glb"></a-asset-item>
+          <a-asset-item
+            id="avatarModel"
+            src="/public/assets/CesiumMan.glb"
+          ></a-asset-item>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity mindar-image-target="targetIndex: 0">
-
-          <a-gltf-model rotation="0 -90 0 " position="0 0 0.1" scale="2 2 2" src="#avatarModel"
-          >
+          <a-gltf-model
+            src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMan/glTF-Binary/CesiumMan.glb"
+            scale="2 2 2"
+            position="0 0 0.1"
+            rotation="0 -90 0"
+            animation-mixer="clip: Run; loop: repeat; timeScale: 1"
+          ></a-gltf-model>
         </a-entity>
       </a-scene>
     </div>
