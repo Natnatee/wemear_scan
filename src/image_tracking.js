@@ -17,7 +17,11 @@ export async function renderImageTracking({ targets, mindFile, onReady }) {
   const scene = document.createElement("a-scene");
   scene.setAttribute(
     "mindar-image",
-    `imageTargetSrc: ${mindFile}; autoStart: true; maxTrack: 3;`
+    `imageTargetSrc: ${mindFile}; autoStart: true; maxTrack: 1;
+    filterMinCF: 0.001;
+    filterBeta: 0;
+    warmupTolerance: 15;
+    missTolerance: 15;`
   );
   scene.setAttribute("vr-mode-ui", "enabled: false");
   scene.setAttribute("device-orientation-permission-ui", "enabled: true");

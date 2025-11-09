@@ -9,10 +9,10 @@
     <title>MindAR + One Euro Filter Test</title>
 
     <!-- A-Frame -->
-    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
     <!-- MindAR -->
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image.prod.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
       body,
@@ -36,8 +36,6 @@
     </style>
   </head>
   <body>
-    <div id="status">กำลังโหลด...</div>
-
     <a-scene
       mindar-image="imageTargetSrc: https://supabase.wemear.com/storage/v1/object/public/assets/mind/mindfile%20default; autoStart: true; maxTrack: 1;"
       embedded
@@ -113,140 +111,5 @@
         ></a-gltf-model>
       </a-entity>
     </a-scene>
-
-    <!-- One Euro Filter + Smooth Tracking -->
-    <script>
-      // One Euro Filter (เหมือนเดิม)
-      const smoothingFactor = (te, cutoff) => {
-        const r = 2 * Math.PI * cutoff * te;
-        return r / (r + 1);
-      };
-      const exponentialSmoothing = (a, x, xPrev) => a * x + (1 - a) * xPrev;
-
-      class OneEuroFilter {
-        constructor({ minCutOff = 0.8, beta = 0.3, dCutOff = 1.0 }) {
-          this.minCutOff = minCutOff;
-          this.beta = beta;
-          this.dCutOff = dCutOff;
-          this.xPrev = null;
-          this.dxPrev = null;
-          this.tPrev = null;
-          this.initialized = false;
-        }
-        reset() {
-          this.initialized = false;
-          this.xPrev = null;
-          this.dxPrev = null;
-          this.tPrev = null;
-        }
-        filter(t, x) {
-          if (!this.initialized) {
-            this.initialized = true;
-            this.xPrev = [...x];
-            this.dxPrev = x.map(() => 0);
-            this.tPrev = t;
-            return [...x];
-          }
-          const te = t - this.tPrev;
-          if (te <= 0) return this.xPrev;
-          const ad = smoothingFactor(te, this.dCutOff);
-          const dx = x.map((val, i) => (val - this.xPrev[i]) / te);
-          const dxHat = dx.map((d, i) =>
-            exponentialSmoothing(ad, d, this.dxPrev[i])
-          );
-          const avgSpeed =
-            dxHat.reduce((a, b) => a + Math.abs(b), 0) / dxHat.length;
-          const cutoff = this.minCutOff + this.beta * avgSpeed;
-          const a = smoothingFactor(te, cutoff);
-          const xHat = x.map((val, i) =>
-            exponentialSmoothing(a, val, this.xPrev[i])
-          );
-          this.xPrev = xHat;
-          this.dxPrev = dxHat;
-          this.tPrev = t;
-          return xHat;
-        }
-      }
-
-      // เก็บ filter และเวลา
-      const filters = new Map();
-      const lastTimes = new Map();
-
-      // รอ scene โหลด
-      document.addEventListener("DOMContentLoaded", () => {
-        const sceneEl = document.querySelector("a-scene");
-
-        sceneEl.addEventListener("renderstart", () => {
-          document.getElementById("status").textContent = "กำลังเริ่มกล้อง...";
-        });
-
-        sceneEl.addEventListener("arReady", () => {
-          document.getElementById("status").textContent =
-            "AR พร้อม! ลองสแกนภาพ";
-          console.log("AR Ready");
-
-          const mindarSystem = sceneEl.components["mindar-image-system"];
-          if (!mindarSystem) {
-            console.error("MindAR system not found!");
-            return;
-          }
-
-          // สร้าง filter สำหรับ target 0
-          const filter = new OneEuroFilter({ minCutOff: 0.8, beta: 0.3 });
-          filters.set(0, filter);
-          lastTimes.set(0, performance.now() / 1000);
-
-          // ใช้ targetUpdate (สำคัญมาก!)
-          mindarSystem.registerCallback("targetUpdate", 0, (event) => {
-            const { modelViewMatrix } = event;
-            const t = performance.now() / 1000;
-            const dt = t - lastTimes.get(0);
-            lastTimes.set(0, t);
-
-            const matrix = new THREE.Matrix4().fromArray(modelViewMatrix);
-            const pos = new THREE.Vector3();
-            const quat = new THREE.Quaternion();
-            const scale = new THREE.Vector3();
-            matrix.decompose(pos, quat, scale);
-
-            const raw = [pos.x, pos.y, pos.z, quat.x, quat.y, quat.z, quat.w];
-            const filtered = filter.filter(dt, raw);
-            const [x, y, z, qx, qy, qz, qw] = filtered;
-
-            const targetEl = document.querySelector(
-              '[mindar-image-target="targetIndex: 0"]'
-            );
-            if (targetEl) {
-              targetEl.object3D.position.set(x, y, z);
-              targetEl.object3D.quaternion.set(qx, qy, qz, qw);
-            }
-          });
-
-          // targetFound / targetLost
-          mindarSystem.registerCallback("targetFound", 0, () => {
-            console.log("Target พบ!");
-            document.getElementById("status").textContent =
-              "พบ Target! ภาพนิ่งแล้ว";
-            const video = document.getElementById("video-professional");
-            if (video) video.play().catch(() => {});
-          });
-
-          mindarSystem.registerCallback("targetLost", 0, () => {
-            console.log("Target หาย");
-            document.getElementById("status").textContent =
-              "AR พร้อม! ลองสแกนภาพ";
-            filter.reset();
-            const video = document.getElementById("video-professional");
-            if (video) video.pause();
-          });
-        });
-
-        sceneEl.addEventListener("arError", (e) => {
-          console.error("AR Error:", e.detail);
-          document.getElementById("status").textContent =
-            "Error: " + e.detail.error;
-        });
-      });
-    </script>
   </body>
 </html>
