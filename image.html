@@ -1,49 +1,12 @@
 <!--
- Basic example
+ Basic example /src/src_mindar/image-target/aframe.js
 -->
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stats.js/16/Stats.min.js"></script>
-    <!-- Use CDN MindAR builds in production to avoid broken /src module paths -->
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image.prod.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-aframe.prod.js"></script>
-    <!-- runtime debug helper: logs MindAR/A-Frame status to console and updates #status -->
-    <script>
-      (function(){
-        function onceSceneReady(){
-          const scene = document.querySelector('a-scene');
-          if(!scene) return;
-          scene.addEventListener('arReady', ()=>{
-            console.log('[debug] arReady fired');
-            const sys = scene.components && scene.components['mindar-image-system'];
-            console.log('[debug] mindar-image-system:', sys);
-            const cam = scene.querySelector('a-camera');
-            if(cam){
-              const look = cam.getAttribute('look-controls');
-              console.log('[debug] camera look-controls attribute:', look);
-            }
-            // show an element-based status when present
-            const statusEl = document.getElementById('status');
-            if(statusEl) statusEl.textContent = 'arReady - see console for debug';
-          });
-
-          scene.addEventListener('loaded', ()=>{ console.log('[debug] scene loaded'); });
-        }
-
-        if(document.readyState === 'complete' || document.readyState === 'interactive') onceSceneReady();
-        else document.addEventListener('DOMContentLoaded', onceSceneReady);
-
-        // global error handler to catch missing module / 404 module load errors
-        window.addEventListener('error', (e)=>{
-          console.error('[debug] window.error', e.message, e.filename || '');
-        });
-        window.addEventListener('unhandledrejection', (e)=>{
-          console.error('[debug] unhandledrejection', e.reason);
-        });
-      })();
-    </script>
+    <script src="/src/src_mindar/image-target/aframe.js" type="module"></script>
    
     <style>
       body {
