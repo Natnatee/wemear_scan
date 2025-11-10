@@ -1,11 +1,15 @@
 /**
- * Utility functions for converting Three.js values to A-Frame format
+ * Main Router & Asset Loader
+ *
+ * Flow:
+ * 1. Fetch project data from API (or use default)
+ * 2. Save to localStorage
+ * 3. Detect tracking mode (image, face, etc.)
+ * 4. Load all assets to IndexedDB
+ * 5. Redirect to tracking page
  */
-import { renderImageTracking } from "./image_tracking.js";
-/**
- * Data format conversion utilities
- */
-import { convertToLegacyFormat } from "./utils/convertData2.js";
+import { project_info } from "./make_data/project_info.js";
+import { loadAssets } from "./utils/assetLoader.js";
 
 const SUPABASE_URL = "https://supabase.wemear.com/rest/v1/project_info";
 const SUPABASE_API_KEY =
@@ -60,66 +64,63 @@ async function fetchProjectData(projectId) {
 }
 
 /**
- * รอให้ A-Frame และ MindAR โหลดเสร็จ
+ * Main initialization function
  */
-function waitForLibraries() {
-  return new Promise((resolve) => {
-    // ตรวจสอบว่า AFRAME และ MindAR โหลดเสร็จแล้วหรือยัง
-    const checkLibraries = setInterval(() => {
-      if (window.AFRAME && window.MINDAR && window.MINDAR.IMAGE) {
-        clearInterval(checkLibraries);
-        console.log("A-Frame and MindAR loaded successfully");
-        resolve();
-      }
-    }, 100);
-  });
-}
-
-async function initAR() {
+async function init() {
   try {
-    // รอให้ libraries โหลดเสร็จก่อน
-    document.getElementById("status").innerText = "กำลังโหลด AR libraries...";
-    await waitForLibraries();
+    const statusEl = document.getElementById("status");
 
-    // ดึง project_id จาก URL
+    // 1. ดึง project_id จาก URL
     const projectId = getProjectIdFromUrl();
-
     console.log("Project ID from URL:", projectId);
 
-    if (!projectId) {
-      const errorMsg =
-        "ไม่พบ project_id ใน URL\nกรุณาใช้รูปแบบ: scan.wemear.com/YOUR_PROJECT_ID";
-      document.getElementById("status").innerText = errorMsg;
-      throw new Error(errorMsg);
+    // 2. Fetch project data (with fallback to default)
+    let projectData;
+    try {
+      if (!projectId) {
+        throw new Error("No project_id in URL");
+      }
+
+      statusEl.innerText = `กำลังโหลดข้อมูลโปรเจค...\nProject ID: ${projectId}`;
+      projectData = await fetchProjectData(projectId);
+      console.log("✅ Project Data fetched:", projectData);
+    } catch (error) {
+      // Fallback to default data
+      console.warn("⚠️ ไม่สามารถโหลดข้อมูลจาก API:", error.message);
+      alert("⚠️ ไม่สามารถโหลดข้อมูลโปรเจคได้\nจะใช้ข้อมูลตัวอย่างแทน");
+
+      projectData = project_info[0];
+      console.log("📦 Using default project data:", projectData);
     }
 
-    document.getElementById(
-      "status"
-    ).innerText = `กำลังโหลดข้อมูลโปรเจค...\nProject ID: ${projectId}`;
+    // 3. บันทึกลง localStorage (ใหม่ทุกครั้ง)
+    localStorage.setItem("projectData", JSON.stringify(projectData));
+    console.log("💾 Saved to localStorage");
 
-    // ดึงข้อมูลจาก API
-    const projectData = await fetchProjectData(projectId);
-    console.log("Project Data:", projectData);
+    // 4. ตรวจสอบ tracking mode (key แรกใน tracking_modes)
+    const trackingModes = projectData.info?.tracking_modes;
+    if (!trackingModes) {
+      throw new Error("ไม่พบข้อมูล tracking_modes ในโปรเจค");
+    }
 
-    // แปลงข้อมูลจากรูปแบบใหม่เป็นรูปแบบเก่า
-    const legacyData = convertToLegacyFormat(projectData);
-    console.log("Legacy Data:", legacyData);
-    const targets = legacyData["image tracking"];
-    const mindFile = legacyData.mindFile;
+    const trackingMode = Object.keys(trackingModes)[0]; // เช่น "image"
+    console.log("🎯 Tracking Mode:", trackingMode);
 
-    document.getElementById("status").innerText = "กำลังเตรียม AR...";
+    const modeData = trackingModes[trackingMode];
 
-    await renderImageTracking({
-      targets,
-      mindFile,
-      onReady: () => {
-        document.getElementById("status").innerText = "AR พร้อมใช้งาน!";
-      },
-    });
+    // 5. โหลด assets ทั้งหมด
+    statusEl.innerText = "กำลังเตรียมโหลด assets...";
+    await loadAssets(modeData, trackingMode);
+
+    // 6. Redirect ไปหน้า tracking
+    statusEl.innerText = `🚀 กำลังพาคุณไปยังหน้า ${trackingMode}...`;
+
+    setTimeout(() => {
+      window.location.href = `/${trackingMode}.html`;
+    }, 1000);
   } catch (error) {
-    console.error("Failed to initialize AR:", error);
+    console.error("❌ Fatal error:", error);
 
-    // แสดงข้อผิดพลาดแบบละเอียด
     const statusEl = document.getElementById("status");
     statusEl.style.whiteSpace = "pre-wrap";
     statusEl.style.textAlign = "left";
@@ -129,4 +130,5 @@ async function initAR() {
   }
 }
 
-initAR();
+// เริ่มทำงาน
+init();

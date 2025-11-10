@@ -1,61 +1,201 @@
-<!--
- Basic example /src/src_mindar/image-target/aframe.js
--->
+<!DOCTYPE html>
 <html>
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/stats.js/16/Stats.min.js"></script>
-    <script src="/src/src_mindar/image-target/aframe.js" type="module"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WeMear AR - Image Tracking</title>
+
+    <!-- MindAR & A-Frame Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image.prod.js"></script>
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
 
     <style>
       body {
         margin: 0;
-      }
-      .example-container {
         overflow: hidden;
-        position: absolute;
-        width: 100%;
-        height: 100%;
+      }
+
+      .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        color: white;
+        font-family: Arial, sans-serif;
+        flex-direction: column;
+      }
+
+      .loading-overlay.hidden {
+        display: none;
+      }
+
+      .loading-text {
+        font-size: 18px;
+        margin-bottom: 20px;
+      }
+
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #00ff88;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .error-message {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 0, 0, 0.9);
+        color: white;
+        padding: 15px 30px;
+        border-radius: 10px;
+        z-index: 10000;
+        font-family: Arial, sans-serif;
+        max-width: 80%;
+        text-align: center;
       }
     </style>
   </head>
-
   <body>
-    <div class="example-container">
-      <a-scene
-        mindar-image="imageTargetSrc: https://supabase.wemear.com/storage/v1/object/public/assets/mind/mindfile%20default; filterMinCF: 0.0001;
-    filterBeta: 0.0;
-    warmupTolerance: 15;
-    missTolerance: 15;
-    showStats: true"
-        embedded
-        color-space="sRGB"
-        renderer="colorManagement: true, physicallyCorrectLights"
-        vr-mode-ui="enabled: false"
-        device-orientation-permission-ui="enabled: false"
-      >
-        <a-assets>
-          <img id="card" src="./assets/card-example/card.png" />
-          <!-- <a-asset-item id="avatarModel" src="./assets/card-example/softmind/scene.gltf"></a-asset-item> -->
-          <a-asset-item
-            id="avatarModel"
-            src="/public/assets/CesiumMan.glb"
-          ></a-asset-item>
-        </a-assets>
-
-        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-        <a-entity mindar-image-target="targetIndex: 0">
-          <a-gltf-model
-            src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMan/glTF-Binary/CesiumMan.glb"
-            scale="2 2 2"
-            position="0 0 0.1"
-            rotation="0 -90 0"
-            animation-mixer="clip: Run; loop: repeat; timeScale: 1"
-          ></a-gltf-model>
-        </a-entity>
-      </a-scene>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+      <div class="loading-text">กำลังเตรียม AR...</div>
+      <div class="spinner"></div>
     </div>
+
+    <script type="module">
+      import { renderImageTracking } from "./src/image_tracking.js";
+
+      /**
+       * แปลงข้อมูลจากรูปแบบใหม่ให้เป็นรูปแบบที่ renderImageTracking ต้องการ
+       */
+      function convertToRenderFormat(imageData) {
+        const targets = {};
+        const mindFile = imageData.mindFile.mind_src;
+
+        // แปลง tracks → scenes → assets เป็น targets object
+        imageData.tracks.forEach((track, trackIndex) => {
+          const targetKey = `target${trackIndex}`;
+
+          // โฟกัส scene แรก (S1)
+          const firstScene = track.scenes.find(
+            (scene) => scene.scene_id === "S1"
+          );
+          if (!firstScene) return;
+
+          // แปลง assets ให้อยู่ในรูปแบบที่ renderImageTracking ต้องการ
+          targets[targetKey] = firstScene.assets.map((asset) => ({
+            src: asset.src,
+            type: asset.type,
+            scale: asset.scale,
+            position: asset.position,
+            rotation: asset.rotation,
+            opacity: asset.opacity,
+            loop: asset.loop,
+            muted: asset.muted,
+            autoplay: asset.autoplay,
+            action: asset.action,
+          }));
+        });
+
+        return { targets, mindFile };
+      }
+
+      /**
+       * แสดง error message
+       */
+      function showError(message) {
+        const errorDiv = document.createElement("div");
+        errorDiv.className = "error-message";
+        errorDiv.innerText = message;
+        document.body.appendChild(errorDiv);
+
+        setTimeout(() => {
+          errorDiv.remove();
+        }, 5000);
+      }
+
+      /**
+       * Main initialization
+       */
+      async function init() {
+        try {
+          // 1. อ่านข้อมูลจาก localStorage
+          const projectDataStr = localStorage.getItem("projectData");
+
+          if (!projectDataStr) {
+            throw new Error("ไม่พบข้อมูลโปรเจค กรุณากลับไปหน้าแรก");
+          }
+
+          const projectData = JSON.parse(projectDataStr);
+          console.log("📦 Project Data:", projectData);
+
+          // 2. ดึงข้อมูล image tracking mode
+          const imageData = projectData.info?.tracking_modes?.image;
+
+          if (!imageData) {
+            throw new Error("ไม่พบข้อมูล Image Tracking ในโปรเจคนี้");
+          }
+
+          console.log("🎯 Image Tracking Data:", imageData);
+
+          // 3. แปลงข้อมูลเป็นรูปแบบที่ renderImageTracking ต้องการ
+          const { targets, mindFile } = convertToRenderFormat(imageData);
+
+          console.log("✅ Converted Targets:", targets);
+          console.log("✅ Mind File:", mindFile);
+
+          // 4. เรนเดอร์ AR Scene
+          await renderImageTracking({
+            targets,
+            mindFile,
+            onReady: (scene) => {
+              console.log("🚀 AR Ready!");
+              // ซ่อน loading overlay
+              const loadingOverlay = document.getElementById("loading-overlay");
+              if (loadingOverlay) {
+                loadingOverlay.classList.add("hidden");
+              }
+            },
+          });
+        } catch (error) {
+          console.error("❌ Error initializing AR:", error);
+
+          // แสดง error
+          showError(`เกิดข้อผิดพลาด: ${error.message}`);
+
+          // ซ่อน loading overlay
+          const loadingOverlay = document.getElementById("loading-overlay");
+          if (loadingOverlay) {
+            loadingOverlay.classList.add("hidden");
+          }
+
+          // Redirect กลับไปหน้าแรกหลัง 3 วินาที
+          setTimeout(() => {
+            window.location.href = "/";
+          }, 3000);
+        }
+      }
+
+      // เริ่มทำงานเมื่อโหลดหน้าเสร็จ
+      init();
+    </script>
   </body>
 </html>
