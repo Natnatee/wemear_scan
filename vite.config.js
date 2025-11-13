@@ -16,6 +16,7 @@ export default defineConfig({
         world: resolve(__dirname, "world.html"),
         "360": resolve(__dirname, "360.html"),
         euro: resolve(__dirname, "euro.html"),
+        face_item: resolve(__dirname, "face_item.html"),
       },
     },
   },
