@@ -1,31 +1,14 @@
 <html>
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script type="module">
-      import * as THREE from "three";
-      import { MindARThree } from "./src/src_mindar/face-target/three";
-      const mindarThree = new MindARThree({
-        container: document.querySelector("#container"),
-      });
-      const { renderer, scene, camera } = mindarThree;
-
-      const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-      scene.add(light);
-
-      const faceMesh = mindarThree.addFaceMesh();
-      const texture = new THREE.TextureLoader().load(
-        "/assets_face_item/canonical_face_model_uv_visualization.png"
-      );
-      faceMesh.material.map = texture;
-      faceMesh.material.transparent = true;
-      faceMesh.material.needsUpdate = true;
-      scene.add(faceMesh);
+      import { initFaceTracking } from "./src/face.js";
 
       const start = async () => {
-        await mindarThree.start();
-        renderer.setAnimationLoop(() => {
-          renderer.render(scene, camera);
-        });
+        const container = document.querySelector("#container");
+        await initFaceTracking(container);
       };
+
       start();
     </script>
 

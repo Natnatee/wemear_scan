@@ -8,7 +8,7 @@
  * 4. Load all assets to IndexedDB
  * 5. Redirect to tracking page
  */
-import { project_info } from "./make_data/project_info.js";
+import { project_info } from "./make_data/project_info_face.js";
 import { loadAssets } from "./utils/assetLoader.js";
 
 const SUPABASE_URL = "https://supabase.wemear.com/rest/v1/project_info";
@@ -103,7 +103,7 @@ async function init() {
       throw new Error("ไม่พบข้อมูล tracking_modes ในโปรเจค");
     }
 
-    const trackingMode = Object.keys(trackingModes)[0]; // เช่น "image"
+    const trackingMode = Object.keys(trackingModes)[0]; // เช่น "image" หรือ "face"
     console.log("🎯 Tracking Mode:", trackingMode);
 
     const modeData = trackingModes[trackingMode];
