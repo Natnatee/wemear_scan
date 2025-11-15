@@ -1,8 +1,9 @@
 /**
  * สร้างปุ่มสำหรับเปลี่ยน Scene
  * @param {Object} sceneButtonConfig - การตั้งค่าปุ่ม {show, src_left, src_right}
+ * @param {Function} changeScene - ฟังก์ชันสำหรับเปลี่ยน scene รับ parameter ("prev" หรือ "next")
  */
-export function createSceneButtons(sceneButtonConfig) {
+export function createSceneButtons(sceneButtonConfig, changeScene) {
   if (!sceneButtonConfig || !sceneButtonConfig.show) {
     return;
   }
@@ -41,7 +42,7 @@ export function createSceneButtons(sceneButtonConfig) {
     display: none;
   `;
 
-  // เพิ่ม event listener สำหรับปุ่มซ้าย
+  // เพิ่ม event listener สำหรับปุ่มซ้าย (prev)
   leftButton.addEventListener("click", () => {
     console.log("left");
     // Animation: ขยายและหดกลับ
@@ -49,9 +50,14 @@ export function createSceneButtons(sceneButtonConfig) {
     setTimeout(() => {
       leftButton.style.transform = "scale(1)";
     }, 200);
+    
+    // เรียกฟังก์ชันเปลี่ยน scene
+    if (typeof changeScene === "function") {
+      changeScene("prev");
+    }
   });
 
-  // เพิ่ม event listener สำหรับปุ่มขวา
+  // เพิ่ม event listener สำหรับปุ่มขวา (next)
   rightButton.addEventListener("click", () => {
     console.log("right");
     // Animation: ขยายและหดกลับ
@@ -59,6 +65,11 @@ export function createSceneButtons(sceneButtonConfig) {
     setTimeout(() => {
       rightButton.style.transform = "scale(1)";
     }, 200);
+    
+    // เรียกฟังก์ชันเปลี่ยน scene
+    if (typeof changeScene === "function") {
+      changeScene("next");
+    }
   });
 
   // เพิ่มปุ่มเข้าไปใน body

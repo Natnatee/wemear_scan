@@ -9,7 +9,7 @@ import { createSceneButtons } from "./utils/change_track_scene.js";
 /**
  * แปลงข้อมูลจากรูปแบบใหม่ให้เป็นรูปแบบที่ renderImageTracking ต้องการ
  */
-function convertToRenderFormat(imageData) {
+function convertToRenderFormat(imageData, sceneId = "S1") {
   const targets = {};
   const mindFile = imageData.mindFile.mind_src;
 
@@ -17,12 +17,12 @@ function convertToRenderFormat(imageData) {
   imageData.tracks.forEach((track, trackIndex) => {
     const targetKey = `target${trackIndex}`;
 
-    // โฟกัส scene แรก (S1)
-    const firstScene = track.scenes.find((scene) => scene.scene_id === "S1");
-    if (!firstScene) return;
+    // โฟกัส scene ตาม sceneId
+    const currentScene = track.scenes.find((scene) => scene.scene_id === sceneId);
+    if (!currentScene) return;
 
     // แปลง assets ให้อยู่ในรูปแบบที่ renderImageTracking ต้องการ
-    targets[targetKey] = firstScene.assets.map((asset) => ({
+    targets[targetKey] = currentScene.assets.map((asset) => ({
       src: asset.src,
       type: asset.type,
       scale: asset.scale,
@@ -224,7 +224,7 @@ async function create3DModelElement(t) {
 /**
  * สร้าง image element
  */
-function createImageElement(t) {
+function createImageElement(t, fadeIn = false) {
   const img = document.createElement("a-image");
   img.setAttribute("src", t.src);
   img.setAttribute("scale", convertToAframe(t.scale, "scale"));
@@ -233,7 +233,18 @@ function createImageElement(t) {
     "rotation",
     t.rotation ? convertToAframe(t.rotation, "rotation") : "0 0 0"
   );
-  if (t.opacity !== undefined) img.setAttribute("opacity", t.opacity);
+  
+  if (fadeIn) {
+    // เริ่มต้นด้วย opacity 0 แล้วค่อย fade in
+    img.setAttribute("opacity", "0");
+    
+    img.addEventListener("materialtextureloaded", () => {
+      img.setAttribute("opacity", t.opacity !== undefined ? t.opacity : 1);
+    });
+  } else {
+    if (t.opacity !== undefined) img.setAttribute("opacity", t.opacity);
+  }
+  
   return img;
 }
 
@@ -247,8 +258,10 @@ export async function renderImageTracking({
   sceneButtonConfig,
   onReady,
 }) {
-  // ตัวแปรเก็บ track ที่กำลังโฟกัส
+  // ตัวแปรเก็บ track และ scene ที่กำลังโฟกัส
   let track_focus = null;
+  let prev_track_focus = null;
+  let scene_focus = "S1";
 
   const scene = createScene(mindFile);
 
@@ -279,6 +292,8 @@ export async function renderImageTracking({
   );
 
   let targetIndex = 0;
+  const entityMap = {}; // เก็บ reference ของแต่ละ entity
+
   for (const key in targets) {
     if (!targets[key] || !Array.isArray(targets[key])) continue;
 
@@ -288,21 +303,89 @@ export async function renderImageTracking({
     // เพิ่ม event listener สำหรับ tracking
     const trackId = `T${targetIndex + 1}`;
     const currentTrackIndex = targetIndex;
+    
+    // เก็บ reference
+    entityMap[trackId] = entity;
+
+    // ฟังก์ชันอัพเดท assets ใน entity
+    const updateEntityAssets = async (sceneId) => {
+      // ลบ assets เก่าทั้งหมด
+      while (entity.firstChild) {
+        entity.removeChild(entity.firstChild);
+      }
+
+      // หา scene ที่ต้องการ
+      const currentTrack = tracks[currentTrackIndex];
+      const targetScene = currentTrack.scenes.find(s => s.scene_id === sceneId);
+      
+      if (!targetScene) {
+        console.warn(`Scene ${sceneId} not found in ${trackId}`);
+        return;
+      }
+
+      console.log(`🎬 Updating ${trackId} to ${sceneId}`);
+
+      // สร้าง assets ใหม่
+      for (let i = 0; i < targetScene.assets.length; i++) {
+        const asset = targetScene.assets[i];
+        let element;
+
+        if (asset.type === "Video") {
+          element = await createVideoElement(asset, currentTrackIndex, i, assets);
+        } else if (asset.type === "3D Model") {
+          element = await create3DModelElement(asset);
+        } else if (asset.type === "Image") {
+          // ใช้ fadeIn=true เมื่ออัพเดท scene
+          element = createImageElement(asset, true);
+        }
+
+        if (element) entity.appendChild(element);
+      }
+    };
 
     entity.addEventListener("targetFound", () => {
+      // ถ้าเปลี่ยน track ให้รีเซ็ต scene_focus เป็น S1
+      if (prev_track_focus !== null && prev_track_focus !== trackId) {
+        scene_focus = "S1";
+        console.log("🔄 Reset scene_focus to S1");
+        // อัพเดท entity ให้แสดง S1
+        updateEntityAssets(scene_focus);
+      }
+      
       // เปลี่ยนค่า track_focus
+      prev_track_focus = track_focus;
       track_focus = trackId;
       console.log("track_focus:", track_focus);
+      console.log("scene_focus:", scene_focus);
 
       // ตรวจสอบว่า track นี้มีกี่ scene
       const currentTrack = tracks?.[currentTrackIndex];
       const hasMultipleScenes = currentTrack?.scenes?.length > 1;
 
+      // ฟังก์ชันเปลี่ยน scene
+      const changeScene = async (direction) => {
+        const sceneCount = currentTrack.scenes.length;
+        const currentSceneNum = parseInt(scene_focus.replace("S", ""));
+        let newSceneNum;
+        
+        if (direction === "next") {
+          newSceneNum = currentSceneNum >= sceneCount ? 1 : currentSceneNum + 1;
+        } else {
+          newSceneNum = currentSceneNum <= 1 ? sceneCount : currentSceneNum - 1;
+        }
+        
+        scene_focus = `S${newSceneNum}`;
+        console.log("scene_focus:", scene_focus);
+        
+        // อัพเดท AR scene
+        await updateEntityAssets(scene_focus);
+      };
+
       // แสดงหรือซ่อนปุ่มตามจำนวน scene
       if (sceneButtonConfig?.show && hasMultipleScenes) {
         // ถ้ายังไม่มีปุ่ม ให้สร้างใหม่
         if (!document.querySelector(".scene-button-left")) {
-          createSceneButtons(sceneButtonConfig);
+          createSceneButtons(sceneButtonConfig, changeScene);
         }
         // แสดงปุ่ม
         document
