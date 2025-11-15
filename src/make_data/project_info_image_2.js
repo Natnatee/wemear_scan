@@ -73,13 +73,13 @@ export const project_info = [
             },
           ],
           mindFile: {
-            mind_id: "00986ea7-a799-4f6a-8b7c-fbc1a7f70f4a",
+            mind_id: "c5c999a0-a58e-4d62-b936-1306ef089c5e",
             mind_src:
-              "https://supabase.wemear.com/storage/v1/object/public/assets/mind/TEST1",
-            mind_name: "TEST1",
+              "https://supabase.wemear.com/storage/v1/object/public/assets/mind/Test_Scene",
+            mind_name: "Test_Scene",
             mind_image: {
-              T1: "https://supabase.wemear.com/storage/v1/object/public/assets/mind/images/TEST1_T1",
-              T2: "https://supabase.wemear.com/storage/v1/object/public/assets/mind/images/TEST1_T2",
+              T1: "https://supabase.wemear.com/storage/v1/object/public/assets/mind/images/Test_Scene_T1",
+              T2: "https://supabase.wemear.com/storage/v1/object/public/assets/mind/images/Test_Scene_T2",
             },
           },
           setting: {
