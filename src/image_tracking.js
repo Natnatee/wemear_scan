@@ -36,7 +36,7 @@ function convertToRenderFormat(imageData) {
     }));
   });
 
-  return { targets, mindFile };
+  return { targets, mindFile, tracks: imageData.tracks };
 }
 
 /**
@@ -95,7 +95,7 @@ export async function initImageTracking() {
     console.log("🎯 Image Tracking Data:", imageData);
 
     // 3. แปลงข้อมูลเป็นรูปแบบที่ renderImageTracking ต้องการ
-    const { targets, mindFile } = convertToRenderFormat(imageData);
+    const { targets, mindFile, tracks } = convertToRenderFormat(imageData);
 
     console.log("✅ Converted Targets:", targets);
     console.log("✅ Mind File:", mindFile);
@@ -104,16 +104,13 @@ export async function initImageTracking() {
     await renderImageTracking({
       targets,
       mindFile,
+      tracks,
+      sceneButtonConfig: imageData.setting?.scene_button,
       onReady: (scene) => {
         console.log("🚀 AR Ready!");
         // ซ่อน loading overlay
         if (loadingOverlay) {
           loadingOverlay.classList.add("hidden");
-        }
-
-        // 5. สร้างปุ่มเปลี่ยน Scene (ถ้ามี setting)
-        if (imageData.setting?.scene_button) {
-          createSceneButtons(imageData.setting.scene_button);
         }
       },
     });
@@ -243,7 +240,16 @@ function createImageElement(t) {
 /**
  * เรนเดอร์ AR scene สำหรับ image tracking
  */
-export async function renderImageTracking({ targets, mindFile, onReady }) {
+export async function renderImageTracking({
+  targets,
+  mindFile,
+  tracks,
+  sceneButtonConfig,
+  onReady,
+}) {
+  // ตัวแปรเก็บ track ที่กำลังโฟกัส
+  let track_focus = null;
+
   const scene = createScene(mindFile);
 
   const camera = document.createElement("a-camera");
@@ -278,6 +284,50 @@ export async function renderImageTracking({ targets, mindFile, onReady }) {
 
     const entity = document.createElement("a-entity");
     entity.setAttribute("mindar-image-target", `targetIndex: ${targetIndex}`);
+
+    // เพิ่ม event listener สำหรับ tracking
+    const trackId = `T${targetIndex + 1}`;
+    const currentTrackIndex = targetIndex;
+
+    entity.addEventListener("targetFound", () => {
+      // เปลี่ยนค่า track_focus
+      track_focus = trackId;
+      console.log("track_focus:", track_focus);
+
+      // ตรวจสอบว่า track นี้มีกี่ scene
+      const currentTrack = tracks?.[currentTrackIndex];
+      const hasMultipleScenes = currentTrack?.scenes?.length > 1;
+
+      // แสดงหรือซ่อนปุ่มตามจำนวน scene
+      if (sceneButtonConfig?.show && hasMultipleScenes) {
+        // ถ้ายังไม่มีปุ่ม ให้สร้างใหม่
+        if (!document.querySelector(".scene-button-left")) {
+          createSceneButtons(sceneButtonConfig);
+        }
+        // แสดงปุ่ม
+        document
+          .querySelectorAll(".scene-button-left, .scene-button-right")
+          .forEach((btn) => {
+            btn.style.display = "block";
+          });
+      } else {
+        // ซ่อนปุ่ม
+        document
+          .querySelectorAll(".scene-button-left, .scene-button-right")
+          .forEach((btn) => {
+            btn.style.display = "none";
+          });
+      }
+    });
+
+    entity.addEventListener("targetLost", () => {
+      // ซ่อนปุ่มเมื่อหาย target
+      document
+        .querySelectorAll(".scene-button-left, .scene-button-right")
+        .forEach((btn) => {
+          btn.style.display = "none";
+        });
+    });
 
     for (let modelIdx = 0; modelIdx < targets[key].length; modelIdx++) {
       const t = targets[key][modelIdx];

@@ -11,6 +11,7 @@ export function createSceneButtons(sceneButtonConfig) {
 
   // สร้างปุ่มซ้าย
   const leftButton = document.createElement("img");
+  leftButton.className = "scene-button-left";
   leftButton.src = src_left;
   leftButton.style.cssText = `
     position: fixed;
@@ -21,10 +22,12 @@ export function createSceneButtons(sceneButtonConfig) {
     cursor: pointer;
     z-index: 9999;
     transition: transform 0.2s ease;
+    display: none;
   `;
 
   // สร้างปุ่มขวา
   const rightButton = document.createElement("img");
+  rightButton.className = "scene-button-right";
   rightButton.src = src_right;
   rightButton.style.cssText = `
     position: fixed;
@@ -35,6 +38,7 @@ export function createSceneButtons(sceneButtonConfig) {
     cursor: pointer;
     z-index: 9999;
     transition: transform 0.2s ease;
+    display: none;
   `;
 
   // เพิ่ม event listener สำหรับปุ่มซ้าย
