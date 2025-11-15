@@ -22,9 +22,12 @@ const createUI = (assets, modelsMap) => {
     left: 50%;
     transform: translateX(-50%);
     display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
     z-index: 2;
     gap: 5px;
     padding: 10px;
+    max-width: 90vw;
   `;
 
   // เก็บ items ที่ไม่ซ้ำกัน (ใช้ asset_name ตรงๆ ไม่ต้องตัด)
@@ -35,11 +38,8 @@ const createUI = (assets, modelsMap) => {
       asset.src_thumbnail &&
       asset.asset_name
     ) {
-      // ใช้ asset_name เป็น key โดยตรง แต่กรอง _left และ _right ออก
+      // ใช้ asset_name เป็น key โดยตรง
       let itemKey = asset.asset_name;
-      if (itemKey.endsWith("_left") || itemKey.endsWith("_right")) {
-        itemKey = "earring"; // รวม earring_left และ earring_right เป็น earring
-      }
 
       if (!uniqueItems[itemKey]) {
         uniqueItems[itemKey] = {
@@ -193,11 +193,8 @@ const createFaceItems = async (mindarThree, assets) => {
 
       // เก็บ model ไว้ใน map (สำหรับ items ที่ไม่ใช่ head occluder)
       if (!asset.mindar_face_occluder && asset.asset_name) {
-        // ใช้ asset_name เป็น key โดยตรง แต่รวม earring_left/right เป็น earring
+        // ใช้ asset_name เป็น key โดยตรง
         let itemKey = asset.asset_name;
-        if (itemKey.endsWith("_left") || itemKey.endsWith("_right")) {
-          itemKey = "earring";
-        }
 
         if (!modelsMap[itemKey]) {
           modelsMap[itemKey] = [];

@@ -53,7 +53,7 @@ export const project_info = [
                   asset_name: "glasses1",
                   anchorIndex: 168,
                   anchorPosition: "nose",
-                  visible: true,
+                  visible: false,
                 },
                 {
                   src: "./assets_face_item/glasses2/scene.gltf",
@@ -77,7 +77,7 @@ export const project_info = [
                   asset_name: "earring_left",
                   anchorIndex: 127,
                   anchorPosition: "left_ear",
-                  visible: false,
+                  visible: true,
                 },
                 {
                   src: "./assets_face_item/earring/scene.gltf",
@@ -89,7 +89,7 @@ export const project_info = [
                   asset_name: "earring_right",
                   anchorIndex: 356,
                   anchorPosition: "right_ear",
-                  visible: false,
+                  visible: true,
                 },
               ],
               scene_id: "S1",
@@ -112,6 +112,10 @@ export const project_info = [
         setting: {
           background: "./background_default.jpg",
           icon: "./icon_default.jpg",
+          scene_button: {
+            show: true,
+            src: "./assets_face_item/left-arrow-arrow-3d-illustration-png",
+          },
         },
       },
     },
