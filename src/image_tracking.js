@@ -18,7 +18,9 @@ function convertToRenderFormat(imageData, sceneId = "S1") {
     const targetKey = `target${trackIndex}`;
 
     // โฟกัส scene ตาม sceneId
-    const currentScene = track.scenes.find((scene) => scene.scene_id === sceneId);
+    const currentScene = track.scenes.find(
+      (scene) => scene.scene_id === sceneId
+    );
     if (!currentScene) return;
 
     // แปลง assets ให้อยู่ในรูปแบบที่ renderImageTracking ต้องการ
@@ -233,18 +235,18 @@ function createImageElement(t, fadeIn = false) {
     "rotation",
     t.rotation ? convertToAframe(t.rotation, "rotation") : "0 0 0"
   );
-  
+
   if (fadeIn) {
     // เริ่มต้นด้วย opacity 0 แล้วค่อย fade in
     img.setAttribute("opacity", "0");
-    
+
     img.addEventListener("materialtextureloaded", () => {
       img.setAttribute("opacity", t.opacity !== undefined ? t.opacity : 1);
     });
   } else {
     if (t.opacity !== undefined) img.setAttribute("opacity", t.opacity);
   }
-  
+
   return img;
 }
 
@@ -303,7 +305,7 @@ export async function renderImageTracking({
     // เพิ่ม event listener สำหรับ tracking
     const trackId = `T${targetIndex + 1}`;
     const currentTrackIndex = targetIndex;
-    
+
     // เก็บ reference
     entityMap[trackId] = entity;
 
@@ -316,8 +318,10 @@ export async function renderImageTracking({
 
       // หา scene ที่ต้องการ
       const currentTrack = tracks[currentTrackIndex];
-      const targetScene = currentTrack.scenes.find(s => s.scene_id === sceneId);
-      
+      const targetScene = currentTrack.scenes.find(
+        (s) => s.scene_id === sceneId
+      );
+
       if (!targetScene) {
         console.warn(`Scene ${sceneId} not found in ${trackId}`);
         return;
@@ -331,7 +335,12 @@ export async function renderImageTracking({
         let element;
 
         if (asset.type === "Video") {
-          element = await createVideoElement(asset, currentTrackIndex, i, assets);
+          element = await createVideoElement(
+            asset,
+            currentTrackIndex,
+            i,
+            assets
+          );
         } else if (asset.type === "3D Model") {
           element = await create3DModelElement(asset);
         } else if (asset.type === "Image") {
@@ -351,7 +360,7 @@ export async function renderImageTracking({
         // อัพเดท entity ให้แสดง S1
         updateEntityAssets(scene_focus);
       }
-      
+
       // เปลี่ยนค่า track_focus
       prev_track_focus = track_focus;
       track_focus = trackId;
@@ -367,16 +376,16 @@ export async function renderImageTracking({
         const sceneCount = currentTrack.scenes.length;
         const currentSceneNum = parseInt(scene_focus.replace("S", ""));
         let newSceneNum;
-        
+
         if (direction === "next") {
           newSceneNum = currentSceneNum >= sceneCount ? 1 : currentSceneNum + 1;
         } else {
           newSceneNum = currentSceneNum <= 1 ? sceneCount : currentSceneNum - 1;
         }
-        
+
         scene_focus = `S${newSceneNum}`;
         console.log("scene_focus:", scene_focus);
-        
+
         // อัพเดท AR scene
         await updateEntityAssets(scene_focus);
       };

@@ -50,7 +50,7 @@ export function createSceneButtons(sceneButtonConfig, changeScene) {
     setTimeout(() => {
       leftButton.style.transform = "scale(1)";
     }, 200);
-    
+
     // เรียกฟังก์ชันเปลี่ยน scene
     if (typeof changeScene === "function") {
       changeScene("prev");
@@ -65,7 +65,7 @@ export function createSceneButtons(sceneButtonConfig, changeScene) {
     setTimeout(() => {
       rightButton.style.transform = "scale(1)";
     }, 200);
-    
+
     // เรียกฟังก์ชันเปลี่ยน scene
     if (typeof changeScene === "function") {
       changeScene("next");
