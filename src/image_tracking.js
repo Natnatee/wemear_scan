@@ -4,6 +4,7 @@
  */
 import { convertToAframe } from "./utils/threeToAframe.js";
 import { fetchAndCacheAsset } from "./utils/idbAsset.js";
+import { createSceneButtons } from "./utils/change_track_scene.js";
 
 /**
  * แปลงข้อมูลจากรูปแบบใหม่ให้เป็นรูปแบบที่ renderImageTracking ต้องการ
@@ -108,6 +109,11 @@ export async function initImageTracking() {
         // ซ่อน loading overlay
         if (loadingOverlay) {
           loadingOverlay.classList.add("hidden");
+        }
+
+        // 5. สร้างปุ่มเปลี่ยน Scene (ถ้ามี setting)
+        if (imageData.setting?.scene_button) {
+          createSceneButtons(imageData.setting.scene_button);
         }
       },
     });
