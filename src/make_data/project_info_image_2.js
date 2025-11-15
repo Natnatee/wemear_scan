@@ -1,4 +1,4 @@
-[
+export const project_info = [
   {
     project_id: "ec68cbe4-98ee-46bd-8447-e8b34eafa571",
     info: {
