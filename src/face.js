@@ -83,6 +83,46 @@ const createUI = (assets, modelsMap) => {
   document.body.appendChild(panel);
 };
 
+// สร้างปุ่ม scene button (มุมซ้ายล่าง และ ขวาล่าง)
+const createSceneButton = (setting) => {
+  if (!setting || !setting.scene_button || !setting.scene_button.show) return;
+
+  const createBtn = (position, src) => {
+    if (!src) return null;
+    const button = document.createElement("img");
+    button.src = src;
+    button.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      ${position}: 20px;
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+      z-index: 3;
+      user-select: none;
+    `;
+
+    // ขยายแล้วหดกลับ (ไม่ใช่ toggle ค้าง)
+    button.addEventListener("click", () => {
+      button.style.transform = "scale(1.5)";
+      setTimeout(() => {
+        button.style.transform = "scale(1)";
+      }, 220);
+    });
+
+    document.body.appendChild(button);
+    return button;
+  };
+
+  // สร้างปุ่มซ้ายและขวา โดยอ่าน src_left / src_right หากมี
+  const sb = setting.scene_button || {};
+  const srcLeft = sb.src_left || sb.src;
+  const srcRight = sb.src_right || sb.src;
+  createBtn("left", srcLeft);
+  createBtn("right", srcRight);
+};
+
 // สร้าง Face Mesh แบบ texture
 const createFaceMesh = async (mindarThree, assets) => {
   const { scene } = mindarThree;
@@ -221,17 +261,22 @@ export const initFaceTracking = async (container) => {
   const faceTracking = projectData.info.tracking_modes?.face;
   if (
     !faceTracking ||
-    !faceTracking.scenes ||
-    faceTracking.scenes.length === 0
+    !faceTracking.tracks ||
+    faceTracking.tracks.length === 0 ||
+    !faceTracking.tracks[0].scenes ||
+    faceTracking.tracks[0].scenes.length === 0
   ) {
     console.error("No face tracking scenes found");
     return;
   }
 
   // ดึง scene แรก
-  const firstScene = faceTracking.scenes[0];
+  const firstScene = faceTracking.tracks[0].scenes[0];
   const sceneType = firstScene.scene_type;
   const assets = firstScene.assets || [];
+
+  // ดึง setting
+  const setting = faceTracking.setting;
 
   // สร้าง MindAR instance
   const mindarThree = new MindARThree({
@@ -251,6 +296,9 @@ export const initFaceTracking = async (container) => {
   } else {
     console.warn(`Unknown scene_type: ${sceneType}`);
   }
+
+  // สร้าง scene button ถ้ามี
+  createSceneButton(setting);
 
   // เริ่มต้น MindAR
   await mindarThree.start();
