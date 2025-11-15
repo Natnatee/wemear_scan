@@ -72,10 +72,17 @@ export const project_info = [
               T1: "https://supabase.wemear.com/storage/v1/object/public/assets/mind/images/Test_2_T1",
             },
           },
-          setting:{
-            background:"./background_default.jpg",
-            icon:"./icon_default.jpg",
-          }
+          setting: {
+            background: "./background_default.jpg",
+            icon: "./icon_default.jpg",
+            scene_button: {
+              show: true,
+              src_left:
+                "./assets_face_item/left-arrow-arrow-3d-illustration-png.png",
+              src_right:
+                "./assets_face_item/right-arrow-arrow-3d-illustration-png.png",
+            },
+          },
         },
       },
     },

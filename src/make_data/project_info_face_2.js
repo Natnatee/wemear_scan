@@ -121,7 +121,7 @@ export const project_info = [
             scene_button: {
               show: true,
               src_left: "./assets_face_item/left-arrow-arrow-3d-illustration-png.png",
-              src_right: "./icon_default.jpg",
+              src_right: "./assets_face_item/right-arrow-arrow-3d-illustration-png.png",
             },
           },
         },
