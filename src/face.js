@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { MindARThree } from "./src_mindar/face-target/three";
 import { SceneManager } from "./utils/change_scene.js";
-
+import { initHandTracking } from "./hand.js"; // ← เพิ่มบรรทัดนี้
 // ดึง projectData จาก localStorage
 const getProjectData = () => {
   const data = localStorage.getItem("projectData");
@@ -101,6 +101,12 @@ export const initFaceTracking = async (container) => {
 
   // เริ่มต้น MindAR
   await mindarThree.start();
+
+  //! ===== Setup Hand Tracking ===== ← เพิ่มตรงนี้
+  const videoElement = container.querySelector("video");
+  if (videoElement) {
+    await initHandTracking(videoElement);
+  }
 
   // Animation loop
   renderer.setAnimationLoop(() => {
