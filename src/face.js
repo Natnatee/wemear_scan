@@ -105,7 +105,15 @@ export const initFaceTracking = async (container) => {
   //! ===== Setup Hand Tracking ===== ← เพิ่มตรงนี้
   const videoElement = container.querySelector("video");
   if (videoElement) {
-    await initHandTracking(videoElement);
+    const handTracker = await initHandTracking(videoElement);
+
+    // ผูก callback สำหรับการปัดมือกับการเปลี่ยน scene
+    if (handTracker) {
+      handTracker.setSwipeCallbacks(
+        () => sceneManager.prevScene(), // ปัดซ้าย = scene ก่อนหน้า
+        () => sceneManager.nextScene() // ปัดขวา = scene ถัดไป
+      );
+    }
   }
 
   // Animation loop

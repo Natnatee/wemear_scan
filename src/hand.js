@@ -36,6 +36,16 @@ const SWIPE_TIME_THRESHOLD = 500; // เวลาสูงสุดในกา�
 const SWIPE_COOLDOWN = 1000; // เวลารอระหว่างการตรวจจับปัด (milliseconds)
 let lastSwipeTime = 0;
 
+// ตัวแปรสำหรับตรวจจับท่ากำมือ (Fist Gesture)
+let isFistDetected = false;
+let fistStartTime = null;
+const FIST_HOLD_DURATION = 1000; // เวลาที่ต้องกำมือค้าง (1 วินาที)
+let swipeMode = false; // โหมดการปัดมือ (เปิด/ปิด)
+
+// ตัวแปรเก็บ callback สำหรับการปัดซ้าย/ขวา
+let onSwipeLeft = null;
+let onSwipeRight = null;
+
 // ฟังก์ชันวาดเส้นเชื่อมต่อ
 const drawConnectors = (ctx, canvas, landmarks, connections, color) => {
   connections.forEach((connection) => {
@@ -70,8 +80,77 @@ const drawLandmarks = (ctx, canvas, landmarks, color) => {
   });
 };
 
+// ฟังก์ชันตรวจจับท่ากำมือ (Fist Detection)
+const detectFist = (landmarks) => {
+  // ตรวจสอบว่านิ้วทุกนิ้วงอหรือไม่ (ยกเว้นนิ้วหัวแม่มือ)
+  // เปรียบเทียบระยะของ tip กับ MCP (ข้อนิ้ว)
+
+  const fingerTips = [8, 12, 16, 20]; // ปลายนิ้วชี้, กลาง, นาง, ก้อย
+  const fingerMCPs = [5, 9, 13, 17]; // ข้อนิ้วฐาน
+
+  let closedFingers = 0;
+
+  for (let i = 0; i < fingerTips.length; i++) {
+    const tip = landmarks[fingerTips[i]];
+    const mcp = landmarks[fingerMCPs[i]];
+    const wrist = landmarks[0];
+
+    // คำนวณระยะห่างจากข้อมือ
+    const tipDistance = Math.sqrt(
+      Math.pow(tip.x - wrist.x, 2) + Math.pow(tip.y - wrist.y, 2)
+    );
+    const mcpDistance = Math.sqrt(
+      Math.pow(mcp.x - wrist.x, 2) + Math.pow(mcp.y - wrist.y, 2)
+    );
+
+    // ถ้าปลายนิ้วอยู่ใกล้ข้อมือกว่าข้อนิ้ว = นิ้วงอ
+    if (tipDistance < mcpDistance * 1.1) {
+      closedFingers++;
+    }
+  }
+
+  // ถ้านิ้วงออย่างน้อย 3 นิ้ว = ถือว่ากำมือ
+  return closedFingers >= 3;
+};
+
+// ฟังก์ชันจัดการโหมดการปัดมือ (Toggle Swipe Mode)
+const handleFistGesture = (landmarks) => {
+  const currentTime = Date.now();
+  const isFist = detectFist(landmarks);
+
+  if (isFist) {
+    if (!isFistDetected) {
+      // เริ่มกำมือ
+      isFistDetected = true;
+      fistStartTime = currentTime;
+    } else {
+      // กำมือค้างอยู่
+      const holdDuration = currentTime - fistStartTime;
+      if (holdDuration >= FIST_HOLD_DURATION && fistStartTime !== null) {
+        // Toggle โหมดการปัด
+        swipeMode = !swipeMode;
+        console.log(`Swipe Mode: ${swipeMode ? "ON" : "OFF"}`);
+        fistStartTime = null; // ป้องกันการ toggle ซ้ำ
+      }
+    }
+  } else {
+    // ปล่อยมือ - รีเซ็ต
+    isFistDetected = false;
+    fistStartTime = null;
+  }
+};
+
 // ฟังก์ชันตรวจจับการปัดมือ
 const detectSwipe = (landmarks) => {
+  // ตรวจสอบว่าเปิดโหมดปัดหรือไม่
+  if (!swipeMode) {
+    // รีเซ็ตค่าถ้าโหมดปิด
+    previousHandX = null;
+    swipeStartX = null;
+    swipeStartTime = null;
+    return;
+  }
+
   const currentTime = Date.now();
 
   // ใช้ตำแหน่งข้อมือ (landmark 0) เป็นจุดอ้างอิง
@@ -97,6 +176,7 @@ const detectSwipe = (landmarks) => {
     currentTime - lastSwipeTime > SWIPE_COOLDOWN
   ) {
     console.log("right");
+    if (onSwipeRight) onSwipeRight(); // เรียก callback
     lastSwipeTime = currentTime;
     // รีเซ็ตค่า
     swipeStartX = currentX;
@@ -109,6 +189,7 @@ const detectSwipe = (landmarks) => {
     currentTime - lastSwipeTime > SWIPE_COOLDOWN
   ) {
     console.log("left");
+    if (onSwipeLeft) onSwipeLeft(); // เรียก callback
     lastSwipeTime = currentTime;
     // รีเซ็ตค่า
     swipeStartX = currentX;
@@ -155,7 +236,7 @@ export const initHandTracking = async (videoElement) => {
   });
 
   hands.setOptions({
-    maxNumHands: 2,
+    maxNumHands: 1,
     modelComplexity: 1,
     minDetectionConfidence: 0.5,
     minTrackingConfidence: 0.5,
@@ -174,13 +255,19 @@ export const initHandTracking = async (videoElement) => {
 
     // วาดมือถ้าตรวจจับได้
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-      results.multiHandLandmarks.forEach((landmarks, index) => {
-        const handedness = results.multiHandedness[index].label;
-        const isRight = handedness === "Right";
-        const mainColor = isRight ? "#00ff00" : "#ff00ff";
-        const lightColor = isRight ? "#88ff88" : "#ff88ff";
+      const landmarks = results.multiHandLandmarks[0];
+      const handedness = results.multiHandedness[0].label;
+      const isLeft = handedness === "Left";
 
-        // ตรวจจับการปัดมือ
+      // ประมวลผลเฉพาะมือซ้าย
+      if (isLeft) {
+        const mainColor = "#ff00ff";
+        const lightColor = "#ff88ff";
+
+        // ตรวจจับท่ากำมือสำหรับ toggle mode
+        handleFistGesture(landmarks);
+
+        // ตรวจจับการปัดมือ (ทำงานเฉพาะเมื่อ swipeMode = true)
         detectSwipe(landmarks);
 
         // วาดเส้นและจุด
@@ -193,16 +280,25 @@ export const initHandTracking = async (videoElement) => {
         );
         drawLandmarks(canvasCtx, handCanvas, landmarks, lightColor);
 
-        // แสดงข้อความมือซ้าย/ขวา
+        // แสดงข้อความมือซ้าย
         const wrist = landmarks[0];
         canvasCtx.fillStyle = mainColor;
         canvasCtx.font = "bold 20px Arial";
         canvasCtx.fillText(
-          isRight ? "มือขวา" : "มือซ้าย",
+          "มือซ้าย",
           wrist.x * handCanvas.width,
           wrist.y * handCanvas.height - 20
         );
-      });
+
+        // แสดงสถานะโหมดปัด
+        canvasCtx.fillStyle = swipeMode ? "#00ff00" : "#ff0000";
+        canvasCtx.font = "bold 24px Arial";
+        canvasCtx.fillText(
+          `Swipe Mode: ${swipeMode ? "ON" : "OFF"}`,
+          wrist.x * handCanvas.width,
+          wrist.y * handCanvas.height - 50
+        );
+      }
     }
   });
 
@@ -220,6 +316,10 @@ export const initHandTracking = async (videoElement) => {
   return {
     hands,
     canvas: handCanvas,
+    setSwipeCallbacks: (leftCallback, rightCallback) => {
+    //   onSwipeLeft = leftCallback;
+      onSwipeRight = rightCallback;
+    },
     stop: () => {
       hands.close();
       handCanvas.remove();

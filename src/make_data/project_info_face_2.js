@@ -111,6 +111,18 @@ export const project_info = [
                   scene_id: "S2",
                   scene_type: "face_mesh",
                 },
+                {
+                  assets: [
+                    {
+                      src: "./assets_face_item/raccoon_head.glb",
+                      src_thumbnail:
+                        "./assets_face_item/canonical_face_model_uv_visualization.png",
+                      asset_id: "asset_2f97f79d-963f-47a1-9a67-85a61ce0789797",
+                    },
+                  ],
+                  scene_id: "S3",
+                  scene_type: "face_avatar",
+                },
               ],
               track_id: "T1",
             },
