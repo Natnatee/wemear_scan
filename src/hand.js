@@ -2,12 +2,29 @@
 
 // เส้นเชื่อมต่อของมือ
 const HAND_CONNECTIONS = [
-  [0, 1], [1, 2], [2, 3], [3, 4],           // นิ้วหัวแม่มือ
-  [0, 5], [5, 6], [6, 7], [7, 8],           // นิ้วชี้
-  [0, 9], [9, 10], [10, 11], [11, 12],      // นิ้วกลาง
-  [0, 13], [13, 14], [14, 15], [15, 16],    // นิ้วนาง
-  [0, 17], [17, 18], [18, 19], [19, 20],    // นิ้วก้อย
-  [5, 9], [9, 13], [13, 17]                 // ฝ่ามือ
+  [0, 1],
+  [1, 2],
+  [2, 3],
+  [3, 4], // นิ้วหัวแม่มือ
+  [0, 5],
+  [5, 6],
+  [6, 7],
+  [7, 8], // นิ้วชี้
+  [0, 9],
+  [9, 10],
+  [10, 11],
+  [11, 12], // นิ้วกลาง
+  [0, 13],
+  [13, 14],
+  [14, 15],
+  [15, 16], // นิ้วนาง
+  [0, 17],
+  [17, 18],
+  [18, 19],
+  [19, 20], // นิ้วก้อย
+  [5, 9],
+  [9, 13],
+  [13, 17], // ฝ่ามือ
 ];
 
 // ตัวแปรสำหรับตรวจจับการปัดมือ
@@ -21,10 +38,10 @@ let lastSwipeTime = 0;
 
 // ฟังก์ชันวาดเส้นเชื่อมต่อ
 const drawConnectors = (ctx, canvas, landmarks, connections, color) => {
-  connections.forEach(connection => {
+  connections.forEach((connection) => {
     const start = landmarks[connection[0]];
     const end = landmarks[connection[1]];
-    
+
     ctx.beginPath();
     ctx.moveTo(start.x * canvas.width, start.y * canvas.height);
     ctx.lineTo(end.x * canvas.width, end.y * canvas.height);
@@ -36,7 +53,7 @@ const drawConnectors = (ctx, canvas, landmarks, connections, color) => {
 
 // ฟังก์ชันวาดจุด
 const drawLandmarks = (ctx, canvas, landmarks, color) => {
-  landmarks.forEach(landmark => {
+  landmarks.forEach((landmark) => {
     ctx.beginPath();
     ctx.arc(
       landmark.x * canvas.width,
@@ -47,7 +64,7 @@ const drawLandmarks = (ctx, canvas, landmarks, color) => {
     );
     ctx.fillStyle = color;
     ctx.fill();
-    ctx.strokeStyle = '#ffffff';
+    ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 2;
     ctx.stroke();
   });
@@ -56,11 +73,11 @@ const drawLandmarks = (ctx, canvas, landmarks, color) => {
 // ฟังก์ชันตรวจจับการปัดมือ
 const detectSwipe = (landmarks) => {
   const currentTime = Date.now();
-  
+
   // ใช้ตำแหน่งข้อมือ (landmark 0) เป็นจุดอ้างอิง
   const wrist = landmarks[0];
   const currentX = wrist.x;
-  
+
   // เริ่มต้นการปัด
   if (previousHandX === null) {
     previousHandX = currentX;
@@ -68,18 +85,18 @@ const detectSwipe = (landmarks) => {
     swipeStartTime = currentTime;
     return;
   }
-  
+
   // คำนวณระยะทางที่เคลื่อนไหว
   const deltaX = currentX - swipeStartX;
   const timeDelta = currentTime - swipeStartTime;
-  
+
   // ตรวจจับการปัดขวา (เคลื่อนจากซ้ายไปขวา)
   if (
-    deltaX > SWIPE_THRESHOLD && 
+    deltaX > SWIPE_THRESHOLD &&
     timeDelta < SWIPE_TIME_THRESHOLD &&
     currentTime - lastSwipeTime > SWIPE_COOLDOWN
   ) {
-    console.log('right');
+    console.log("right");
     lastSwipeTime = currentTime;
     // รีเซ็ตค่า
     swipeStartX = currentX;
@@ -87,23 +104,23 @@ const detectSwipe = (landmarks) => {
   }
   // ตรวจจับการปัดซ้าย (เคลื่อนจากขวาไปซ้าย)
   else if (
-    deltaX < -SWIPE_THRESHOLD && 
+    deltaX < -SWIPE_THRESHOLD &&
     timeDelta < SWIPE_TIME_THRESHOLD &&
     currentTime - lastSwipeTime > SWIPE_COOLDOWN
   ) {
-    console.log('left');
+    console.log("left");
     lastSwipeTime = currentTime;
     // รีเซ็ตค่า
     swipeStartX = currentX;
     swipeStartTime = currentTime;
   }
-  
+
   // รีเซ็ตถ้าเวลาเกินกำหนด
   if (timeDelta > SWIPE_TIME_THRESHOLD) {
     swipeStartX = currentX;
     swipeStartTime = currentTime;
   }
-  
+
   previousHandX = currentX;
 };
 
@@ -134,14 +151,14 @@ export const initHandTracking = async (videoElement) => {
   const hands = new Hands({
     locateFile: (file) => {
       return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-    }
+    },
   });
 
   hands.setOptions({
     maxNumHands: 2,
     modelComplexity: 1,
     minDetectionConfidence: 0.5,
-    minTrackingConfidence: 0.5
+    minTrackingConfidence: 0.5,
   });
 
   // กำหนด callback เมื่อตรวจจับมือได้
@@ -159,23 +176,29 @@ export const initHandTracking = async (videoElement) => {
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
       results.multiHandLandmarks.forEach((landmarks, index) => {
         const handedness = results.multiHandedness[index].label;
-        const isRight = handedness === 'Right';
-        const mainColor = isRight ? '#00ff00' : '#ff00ff';
-        const lightColor = isRight ? '#88ff88' : '#ff88ff';
+        const isRight = handedness === "Right";
+        const mainColor = isRight ? "#00ff00" : "#ff00ff";
+        const lightColor = isRight ? "#88ff88" : "#ff88ff";
 
         // ตรวจจับการปัดมือ
         detectSwipe(landmarks);
 
         // วาดเส้นและจุด
-        drawConnectors(canvasCtx, handCanvas, landmarks, HAND_CONNECTIONS, mainColor);
+        drawConnectors(
+          canvasCtx,
+          handCanvas,
+          landmarks,
+          HAND_CONNECTIONS,
+          mainColor
+        );
         drawLandmarks(canvasCtx, handCanvas, landmarks, lightColor);
 
         // แสดงข้อความมือซ้าย/ขวา
         const wrist = landmarks[0];
         canvasCtx.fillStyle = mainColor;
-        canvasCtx.font = 'bold 20px Arial';
+        canvasCtx.font = "bold 20px Arial";
         canvasCtx.fillText(
-          isRight ? 'มือขวา' : 'มือซ้าย',
+          isRight ? "มือขวา" : "มือซ้าย",
           wrist.x * handCanvas.width,
           wrist.y * handCanvas.height - 20
         );
@@ -201,7 +224,7 @@ export const initHandTracking = async (videoElement) => {
       hands.close();
       handCanvas.remove();
       console.log("🛑 Hand tracking stopped");
-    }
+    },
   };
 };
 
