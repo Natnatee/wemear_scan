@@ -32,7 +32,7 @@ export const project_info = [
                       asset_name: "hat1",
                       anchorIndex: 10,
                       anchorPosition: "forehead",
-                      visible: true,
+                      visible: false,
                     },
                     {
                       src: "./assets_face_item/hat2/scene.gltf",
@@ -44,7 +44,7 @@ export const project_info = [
                       asset_name: "hat2",
                       anchorIndex: 10,
                       anchorPosition: "forehead",
-                      visible: false,
+                      visible: true,
                     },
                     {
                       src: "./assets_face_item/glasses/scene.gltf",
@@ -93,6 +93,19 @@ export const project_info = [
                       asset_name: "earring_right",
                       anchorIndex: 356,
                       anchorPosition: "right_ear",
+                      visible: true,
+                    },
+                    {
+                      src: "./assets/blue-beard-cartoon-character-3d-model/source/blue_beard.glb",
+                      src_thumbnail:
+                        "./assets/blue-beard-cartoon-character-3d-model/source/beard.jpg",
+                      scale: [1.5, 1.5, 1.5],
+                      asset_id: "asset_beard",
+                      position: [0, -0.65, -1.3],
+                      rotation: [0, 0, 0],
+                      asset_name: "beard",
+                      anchorIndex: 168,
+                      anchorPosition: "mouth",
                       visible: true,
                     },
                   ],
