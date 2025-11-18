@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { removeUIElements } from "./cleanup.js";
 
 /**
  * โหลด Face Items scene (3D models)

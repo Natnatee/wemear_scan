@@ -1,9 +1,3 @@
-import {
-  clearAnchors,
-  clearFaceMesh,
-  removeUIElements,
-  clearLights,
-} from "./cleanup.js";
 import { loadFaceMesh } from "./face_mesh.js";
 import { loadFaceItems } from "./face_item.js";
 
@@ -37,31 +31,35 @@ export function createSceneManager(faceTracking, mindarThree) {
   }
 
   /**
-   * ลบ scene ปัจจุบัน (cleanup)
+   * ลบ scene ปัจจุบัน (แบบง่ายๆ)
    */
   function clearCurrentScene() {
     const { scene } = mindarThree;
 
-    // Clear anchors and models
+    // Clear anchors - ลบ children ทั้งหมด
     if (sceneData.anchorGroups) {
-      clearAnchors(sceneData.anchorGroups);
+      Object.values(sceneData.anchorGroups).forEach((anchor) => {
+        if (anchor && anchor.group) {
+          anchor.group.clear();
+        }
+      });
       sceneData.anchorGroups = null;
     }
 
-    // Clear face mesh
+    // Remove face mesh
     if (sceneData.faceMesh) {
-      clearFaceMesh(scene);
+      scene.remove(sceneData.faceMesh);
       sceneData.faceMesh = null;
     }
 
-    // Clear lights
-    if (sceneData.lights) {
-      clearLights(sceneData.lights);
-      sceneData.lights = [];
-    }
+    // Remove lights
+    sceneData.lights.forEach((light) => {
+      scene.remove(light);
+    });
+    sceneData.lights = [];
 
     // Remove UI panel
-    removeUIElements(["options-panel"]);
+    document.querySelector(".options-panel")?.remove();
     sceneData.uiPanel = null;
     sceneData.modelsMap = null;
   }
