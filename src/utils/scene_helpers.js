@@ -110,13 +110,13 @@ export function createImageElement(t, fadeIn = false) {
     "rotation",
     t.rotation ? convertToAframe(t.rotation, "rotation") : "0 0 0"
   );
-
   // ตั้งค่า width/height ตาม aspect ratio
   setImageAspectRatio(img);
 
-  // จัดการ fade in
   if (fadeIn) {
+    // เริ่มต้นด้วย opacity 0 แล้วค่อย fade in
     img.setAttribute("opacity", "0");
+
     img.addEventListener("materialtextureloaded", () => {
       img.setAttribute("opacity", t.opacity !== undefined ? t.opacity : 1);
     });
