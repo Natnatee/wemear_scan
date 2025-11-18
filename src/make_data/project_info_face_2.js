@@ -114,10 +114,13 @@ export const project_info = [
                 {
                   assets: [
                     {
-                      src: "./assets_face_item/raccoon_head.glb",
+                      src: "https://assets.codepen.io/9177687/raccoon_head.glb",
                       src_thumbnail:
                         "./assets_face_item/canonical_face_model_uv_visualization.png",
                       asset_id: "asset_2f97f79d-963f-47a1-9a67-85a61ce0789797",
+                      scale: [2, 2, 2],
+                      position: [0, 0, 0],
+                      rotation: [0, 0, 0],
                     },
                   ],
                   scene_id: "S3",
@@ -132,8 +135,10 @@ export const project_info = [
             icon: "./icon_default.jpg",
             scene_button: {
               show: true,
-              src_left: "./assets_face_item/left-arrow-arrow-3d-illustration-png.png",
-              src_right: "./assets_face_item/right-arrow-arrow-3d-illustration-png.png",
+              src_left:
+                "./assets_face_item/left-arrow-arrow-3d-illustration-png.png",
+              src_right:
+                "./assets_face_item/right-arrow-arrow-3d-illustration-png.png",
             },
           },
         },

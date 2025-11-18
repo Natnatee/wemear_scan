@@ -118,6 +118,14 @@ export const initFaceTracking = async (container) => {
 
   // Animation loop
   renderer.setAnimationLoop(() => {
+    // Update blendshapes for face_avatar scene
+    const sceneData = sceneManager.getSceneData();
+    if (sceneData.avatar) {
+      const estimate = mindarThree.getLatestEstimate();
+      if (estimate && estimate.blendshapes) {
+        sceneData.avatar.updateBlendshapes(estimate.blendshapes);
+      }
+    }
     renderer.render(scene, camera);
   });
 

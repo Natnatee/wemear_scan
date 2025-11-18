@@ -1,5 +1,6 @@
 import { loadFaceMesh } from "./face_mesh.js";
 import { loadFaceItems } from "./face_item.js";
+import { loadFaceAvatar } from "./face_blendshape.js";
 
 /**
  * สร้าง Scene Manager สำหรับ Face Tracking
@@ -95,6 +96,8 @@ export function createSceneManager(faceTracking, mindarThree) {
         await loadFaceMesh(mindarThree, assets, sceneData);
       } else if (sceneType === "face_item") {
         await loadFaceItems(mindarThree, assets, sceneData);
+      } else if (sceneType === "face_avatar") {
+        await loadFaceAvatar(mindarThree, assets, sceneData);
       } else {
         console.warn(`Unknown scene_type: ${sceneType}`);
         return false;
@@ -131,5 +134,6 @@ export function createSceneManager(faceTracking, mindarThree) {
     nextScene,
     prevScene,
     clearCurrentScene,
+    getSceneData: () => sceneData,
   };
 }
