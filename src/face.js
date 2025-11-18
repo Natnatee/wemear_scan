@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { MindARThree } from "./src_mindar/face-target/three";
-import { SceneManager } from "./utils/change_scene.js";
+import { createSceneManager } from "./utils/change_scene.js";
 import { initHandTracking } from "./hand.js"; // ← เพิ่มบรรทัดนี้
 // ดึง projectData จาก localStorage
 const getProjectData = () => {
@@ -91,7 +91,7 @@ export const initFaceTracking = async (container) => {
   const { renderer, scene, camera } = mindarThree;
 
   // สร้าง SceneManager (Fixed to track T1 for face mode)
-  const sceneManager = new SceneManager(faceTracking, mindarThree);
+  const sceneManager = createSceneManager(faceTracking, mindarThree);
 
   // โหลด scene แรก (index 0)
   await sceneManager.loadScene(0);
