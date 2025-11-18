@@ -11,14 +11,14 @@ export const project_info = [
                 {
                   assets: [
                     {
-                      src: "https://supabase.wemear.com/storage/v1/object/public/assets/videos/boymp4.mp4",
-                      type: "Video",
+                      src: "https://supabase.wemear.com/storage/v1/object/public/assets/images/Landscape-Color.jpg",
+                      type: "Image",
                       scale: [1, 1, 1],
                       opacity: 1,
                       asset_id: "asset_7cdfd845-b320-4808-ade8-142d88e8ce0e",
                       position: [0, 0, 0],
                       rotation: [0, 0, 0],
-                      asset_name: "boymp4.mp4",
+                      asset_name: "Landscape-Color.jpg",
                     },
                   ],
                   scene_id: "S1",
