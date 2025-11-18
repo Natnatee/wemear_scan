@@ -3,6 +3,7 @@
  */
 import { convertToAframe } from "./threeToAframe.js";
 import { fetchAndCacheAsset } from "./idbAsset.js";
+import { setImageAspectRatio, setVideoAspectRatio } from "./width_height.js";
 
 /**
  * สร้าง scene และตั้งค่า MindAR
@@ -71,6 +72,10 @@ export async function createVideoElement(t, targetIndex, modelIdx, assets) {
     "rotation",
     t.rotation ? convertToAframe(t.rotation, "rotation") : "0 0 0"
   );
+
+  // ตั้งค่า width/height ตาม aspect ratio
+  setVideoAspectRatio(videoEl, `video-${targetIndex}-${modelIdx}`);
+
   return videoEl;
 }
 
@@ -106,10 +111,12 @@ export function createImageElement(t, fadeIn = false) {
     t.rotation ? convertToAframe(t.rotation, "rotation") : "0 0 0"
   );
 
-  if (fadeIn) {
-    // เริ่มต้นด้วย opacity 0 แล้วค่อย fade in
-    img.setAttribute("opacity", "0");
+  // ตั้งค่า width/height ตาม aspect ratio
+  setImageAspectRatio(img);
 
+  // จัดการ fade in
+  if (fadeIn) {
+    img.setAttribute("opacity", "0");
     img.addEventListener("materialtextureloaded", () => {
       img.setAttribute("opacity", t.opacity !== undefined ? t.opacity : 1);
     });
