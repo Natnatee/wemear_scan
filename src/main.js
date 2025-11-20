@@ -93,12 +93,32 @@ async function init() {
       console.log("📦 Using default project data:", projectData);
     }
 
-    // 3. บันทึกลง localStorage (ใหม่ทุกครั้ง)
+    // 3. เช็คและเพิ่ม default settings ถ้าไม่มี
+    let trackingModes = projectData.info?.tracking_modes;
+    if (trackingModes) {
+      for (const mode in trackingModes) {
+        if (!trackingModes[mode].setting) {
+          trackingModes[mode].setting = {
+            background: "./background_default.jpg",
+            icon: "./icon_default.jpg",
+            scene_button: {
+              show: true,
+              src_left:
+                "./assets_face_item/left-arrow-arrow-3d-illustration-png.png",
+              src_right:
+                "./assets_face_item/right-arrow-arrow-3d-illustration-png.png",
+            },
+          };
+          console.log(`✅ Added default settings for mode: ${mode}`);
+        }
+      }
+    }
+
+    // 4. บันทึกลง localStorage (ใหม่ทุกครั้ง)
     localStorage.setItem("projectData", JSON.stringify(projectData));
     console.log("💾 Saved to localStorage");
 
-    // 4. ตรวจสอบ tracking mode (key แรกใน tracking_modes)
-    const trackingModes = projectData.info?.tracking_modes;
+    // 5. ตรวจสอบ tracking mode (key แรกใน tracking_modes)
     if (!trackingModes) {
       throw new Error("ไม่พบข้อมูล tracking_modes ในโปรเจค");
     }
@@ -108,11 +128,11 @@ async function init() {
 
     const modeData = trackingModes[trackingMode];
 
-    // 5. โหลด assets ทั้งหมด
+    // 6. โหลด assets ทั้งหมด
     statusEl.innerText = "กำลังเตรียมโหลด assets...";
     await loadAssets(modeData, trackingMode);
 
-    // 6. Redirect ไปหน้า tracking
+    // 7. Redirect ไปหน้า tracking
     statusEl.innerText = `🚀 กำลังพาคุณไปยังหน้า ${trackingMode}...`;
 
     setTimeout(() => {
