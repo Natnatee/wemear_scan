@@ -50,6 +50,61 @@
       const canvas = document.getElementById("canvas");
       const ctx = canvas.getContext("2d");
 
+      // One Euro Filter for smoothing
+      class OneEuroFilter {
+        constructor(minCutoff = 1.0, beta = 0.007) {
+          this.minCutoff = minCutoff;
+          this.beta = beta;
+          this.xPrev = null;
+          this.dxPrev = 0;
+          this.tPrev = null;
+        }
+
+        filter(x, t) {
+          if (this.tPrev === null) {
+            this.tPrev = t;
+            this.xPrev = x;
+            return x;
+          }
+
+          const dt = t - this.tPrev;
+          const dx = (x - this.xPrev) / dt;
+          const edx = this.exponentialSmoothing(
+            dx,
+            this.dxPrev,
+            this.alpha(dt, 1.0)
+          );
+          const cutoff = this.minCutoff + this.beta * Math.abs(edx);
+          const filtered = this.exponentialSmoothing(
+            x,
+            this.xPrev,
+            this.alpha(dt, cutoff)
+          );
+
+          this.xPrev = filtered;
+          this.dxPrev = edx;
+          this.tPrev = t;
+
+          return filtered;
+        }
+
+        alpha(dt, cutoff) {
+          const tau = 1.0 / (2 * Math.PI * cutoff);
+          return 1.0 / (1.0 + tau / dt);
+        }
+
+        exponentialSmoothing(x, xPrev, alpha) {
+          return alpha * x + (1 - alpha) * xPrev;
+        }
+      }
+
+      // Filters for each landmark (33 landmarks × 3 coordinates)
+      const filters = Array.from({ length: 33 }, () => ({
+        x: new OneEuroFilter(1.0, 0.007),
+        y: new OneEuroFilter(1.0, 0.007),
+        z: new OneEuroFilter(1.0, 0.007),
+      }));
+
       // Initialize PoseLandmarker
       async function init() {
         const vision = await FilesetResolver.forVisionTasks(
@@ -67,7 +122,11 @@
 
         // Start webcam
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
+          video: {
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            frameRate: { ideal: 30 },
+          },
         });
         video.srcObject = stream;
         video.addEventListener("loadeddata", predict);
@@ -95,12 +154,20 @@
           const drawingUtils = new DrawingUtils(ctx);
 
           for (const landmark of result.landmarks) {
-            drawingUtils.drawLandmarks(landmark, {
+            // Apply smoothing filter
+            const smoothedLandmark = landmark.map((point, index) => ({
+              x: filters[index].x.filter(point.x, performance.now()),
+              y: filters[index].y.filter(point.y, performance.now()),
+              z: filters[index].z.filter(point.z, performance.now()),
+              visibility: point.visibility,
+            }));
+
+            drawingUtils.drawLandmarks(smoothedLandmark, {
               radius: (data) =>
                 DrawingUtils.lerp(data.from.z, -0.15, 0.1, 5, 1),
             });
             drawingUtils.drawConnectors(
-              landmark,
+              smoothedLandmark,
               PoseLandmarker.POSE_CONNECTIONS
             );
           }
