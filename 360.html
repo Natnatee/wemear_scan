@@ -1,11 +1,260 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>360</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebAR 360° วงกลมรอบตัว</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+      }
+      #video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      #canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      #info {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        color: white;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 15px;
+        border-radius: 8px;
+        font-size: 14px;
+        z-index: 10;
+        max-width: 250px;
+      }
+      #startBtn {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 20px 40px;
+        font-size: 18px;
+        background: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        z-index: 20;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+      #startBtn:hover {
+        background: #45a049;
+      }
+      .color-legend {
+        margin-top: 10px;
+        font-size: 12px;
+      }
+      .color-item {
+        display: flex;
+        align-items: center;
+        margin: 3px 0;
+      }
+      .color-box {
+        width: 15px;
+        height: 15px;
+        border-radius: 3px;
+        margin-right: 8px;
+      }
+    </style>
   </head>
   <body>
-    <div>360</div>
+    <button id="startBtn">เริ่ม AR 360°</button>
+    <video id="video" autoplay playsinline></video>
+    <div id="info">
+      <div>🎯 WebAR 360° - หมุนมือถือดูรอบตัว</div>
+      <div class="color-legend">
+        <div class="color-item">
+          <div class="color-box" style="background: #ff6b6b"></div>
+          หน้า (แดง)
+        </div>
+        <div class="color-item">
+          <div class="color-box" style="background: #4ecdc4"></div>
+          หลัง (เขียวน้ำเงิน)
+        </div>
+        <div class="color-item">
+          <div class="color-box" style="background: #ffe66d"></div>
+          ซ้าย (เหลือง)
+        </div>
+        <div class="color-item">
+          <div class="color-box" style="background: #a8e6cf"></div>
+          ขวา (เขียวอ่อน)
+        </div>
+        <div class="color-item">
+          <div class="color-box" style="background: #ff8b94"></div>
+          บน (ชมพู)
+        </div>
+        <div class="color-item">
+          <div class="color-box" style="background: #c7ceea"></div>
+          ล่าง (ม่วงอ่อน)
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let scene, camera, renderer;
+      let spheres = [];
+      let video;
+      let alpha = 0,
+        beta = 0,
+        gamma = 0;
+
+      document.getElementById("startBtn").addEventListener("click", startAR);
+
+      async function startAR() {
+        document.getElementById("startBtn").style.display = "none";
+
+        // เริ่มกล้อง
+        video = document.getElementById("video");
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: "environment",
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+          });
+          video.srcObject = stream;
+        } catch (err) {
+          alert("ไม่สามารถเข้าถึงกล้องได้: " + err.message);
+          return;
+        }
+
+        // ขออนุญาตใช้ไจโรสโคป (สำหรับ iOS)
+        if (
+          typeof DeviceOrientationEvent !== "undefined" &&
+          typeof DeviceOrientationEvent.requestPermission === "function"
+        ) {
+          try {
+            const permission = await DeviceOrientationEvent.requestPermission();
+            if (permission === "granted") {
+              window.addEventListener("deviceorientation", handleOrientation);
+            }
+          } catch (err) {
+            alert("ไม่สามารถเข้าถึงไจโรสโคปได้");
+          }
+        } else {
+          window.addEventListener("deviceorientation", handleOrientation);
+        }
+
+        // สร้าง Three.js scene
+        scene = new THREE.Scene();
+
+        // สร้างกล้อง
+        camera = new THREE.PerspectiveCamera(
+          75,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          1000
+        );
+        camera.position.set(0, 0, 0); // กล้องอยู่ที่จุดศูนย์กลาง
+
+        // สร้าง renderer
+        renderer = new THREE.WebGLRenderer({
+          alpha: true,
+          antialias: true,
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.domElement.id = "canvas";
+        document.body.appendChild(renderer.domElement);
+
+        // สร้างวงกลมรอบตัว - 6 ทิศทาง
+        const distance = 4; // ระยะห่างจากตัวเรา
+        const sphereSize = 0.4;
+
+        const positions = [
+          { pos: [0, 0, -distance], color: 0xff6b6b, name: "หน้า" }, // หน้า (แดง)
+          { pos: [0, 0, distance], color: 0x4ecdc4, name: "หลัง" }, // หลัง (เขียวน้ำเงิน)
+          { pos: [-distance, 0, 0], color: 0xffe66d, name: "ซ้าย" }, // ซ้าย (เหลือง)
+          { pos: [distance, 0, 0], color: 0xa8e6cf, name: "ขวา" }, // ขวา (เขียวอ่อน)
+          { pos: [0, distance, 0], color: 0xff8b94, name: "บน" }, // บน (ชมพู)
+          { pos: [0, -distance, 0], color: 0xc7ceea, name: "ล่าง" }, // ล่าง (ม่วงอ่อน)
+        ];
+
+        positions.forEach((item) => {
+          const geometry = new THREE.SphereGeometry(sphereSize, 32, 32);
+          const material = new THREE.MeshStandardMaterial({
+            color: item.color,
+            metalness: 0.3,
+            roughness: 0.4,
+            emissive: item.color,
+            emissiveIntensity: 0.2,
+          });
+          const sphere = new THREE.Mesh(geometry, material);
+          sphere.position.set(...item.pos);
+          sphere.userData.name = item.name;
+          scene.add(sphere);
+          spheres.push(sphere);
+        });
+
+        // เพิ่มแสง
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        directionalLight.position.set(5, 5, 5);
+        scene.add(directionalLight);
+
+        // จัดการขนาดหน้าจอ
+        window.addEventListener("resize", onWindowResize);
+
+        // เริ่ม animation loop
+        animate();
+      }
+
+      function handleOrientation(event) {
+        alpha = event.alpha || 0; // Z axis (0-360)
+        beta = event.beta || 0; // X axis (-180 to 180)
+        gamma = event.gamma || 0; // Y axis (-90 to 90)
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+
+        // อัพเดทมุมกล้องตามไจโรสโคป
+        if (alpha !== 0 || beta !== 0 || gamma !== 0) {
+          // แปลงมุมจากไจโรเป็น Euler angles
+          const alphaRad = THREE.MathUtils.degToRad(alpha);
+          const betaRad = THREE.MathUtils.degToRad(beta);
+          const gammaRad = THREE.MathUtils.degToRad(gamma);
+
+          camera.rotation.order = "YXZ";
+          camera.rotation.set(
+            betaRad - Math.PI / 2, // pitch
+            alphaRad, // yaw
+            -gammaRad // roll
+          );
+        }
+
+        // หมุนวงกลมเล็กน้อยเพื่อความสวยงาม
+        spheres.forEach((sphere) => {
+          sphere.rotation.x += 0.01;
+          sphere.rotation.y += 0.01;
+        });
+
+        renderer.render(scene, camera);
+      }
+
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+    </script>
   </body>
 </html>
