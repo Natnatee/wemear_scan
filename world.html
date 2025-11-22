@@ -1,302 +1,139 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebAR World Tracking</title>
-    <!-- Updated Three.js to r160 -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
+    <title>Simple WebXR Hit Test</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
         body {
             margin: 0;
+            padding: 0;
             overflow: hidden;
-            font-family: 'Kanit', Arial, sans-serif;
-            /* Added Kanit for better Thai support if available, fallback to Arial */
         }
 
         #info {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 10px;
+            width: 100%;
+            text-align: center;
             color: white;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            border-radius: 16px;
-            /* More rounded */
-            font-size: 14px;
-            z-index: 10;
-            max-width: 280px;
-            backdrop-filter: blur(5px);
-            /* Modern glass effect */
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        #startBtn {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 16px 32px;
-            font-size: 18px;
-            background: linear-gradient(135deg, #4CAF50, #45a049);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            z-index: 20;
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        #startBtn:active {
-            transform: translate(-50%, -50%) scale(0.95);
-        }
-
-        #controls {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: none;
-            gap: 12px;
-            z-index: 10;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 10px;
-            border-radius: 20px;
-            backdrop-filter: blur(5px);
-        }
-
-        .control-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 2px solid white;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-            transition: transform 0.2s;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-
-        .control-btn:active {
-            transform: scale(0.9);
-        }
-
-        .control-btn.clear-btn {
-            background: #ff4444;
-            color: white;
-            width: auto;
-            padding: 0 15px;
-            border-radius: 20px;
-            font-size: 14px;
-        }
-
-        #reticle {
-            display: none;
-        }
-
-        .status {
-            margin-top: 10px;
-            padding: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            font-size: 12px;
+            font-family: sans-serif;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px black;
+            z-index: 1;
         }
     </style>
 </head>
 
 <body>
-    <button id="startBtn">เริ่ม AR World Tracking</button>
-
-    <div id="info">
-        <div style="font-size: 16px; margin-bottom: 5px;">🎯 <strong>WebAR World Tracking</strong></div>
-        <div style="font-size: 12px; opacity: 0.9;">
-            📱 จิ้มบนพื้นเพื่อวางวงกลม<br>
-            🎨 เลือกสีก่อนวาง<br>
-            🗑️ ล้างเพื่อลบทั้งหมด
-        </div>
-        <div id="status" class="status" style="display: none;"></div>
-    </div>
-
-    <div id="controls">
-        <button class="control-btn" onclick="changeColor('#ff6b6b')" style="background: #ff6b6b;"></button>
-        <button class="control-btn" onclick="changeColor('#4ecdc4')" style="background: #4ecdc4;"></button>
-        <button class="control-btn" onclick="changeColor('#ffe66d')" style="background: #ffe66d;"></button>
-        <button class="control-btn" onclick="changeColor('#ff8b94')" style="background: #ff8b94;"></button>
-        <button class="control-btn clear-btn" onclick="clearAll()">🗑️ ล้าง</button>
-    </div>
+    <div id="info">จิ้มที่หน้าจอเพื่อวางวงกลม</div>
 
     <script type="module">
-        import * as THREE from 'three';
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
         import { ARButton } from 'https://unpkg.com/three@0.160.0/examples/jsm/webxr/ARButton.js';
 
-        let scene, camera, renderer, reticle;
+        let container;
+        let camera, scene, renderer;
+        let controller;
+
+        let reticle;
         let hitTestSource = null;
         let hitTestSourceRequested = false;
-        let placedObjects = [];
-        let currentColor = 0xff6b6b;
 
         init();
+        animate();
 
         function init() {
-            const container = document.createElement('div');
+            container = document.createElement('div');
             document.body.appendChild(container);
 
+            // 1. สร้าง Scene และ Camera
             scene = new THREE.Scene();
-
             camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
-            const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 3);
+            // 2. เพิ่มแสงสว่าง (เพื่อให้เห็นวัตถุ)
+            const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
             light.position.set(0.5, 1, 0.25);
             scene.add(light);
 
+            // 3. ตั้งค่า Renderer (สำคัญ: ต้องเปิด alpha: true และ xr.enabled = true)
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.xr.enabled = true;
+            renderer.xr.enabled = true; // เปิดใช้งาน WebXR
             container.appendChild(renderer.domElement);
 
-            // AR Button
-            const arButton = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] });
-            arButton.style.display = 'none'; // Hide default button to use our custom flow if needed, or just style it.
-            // Actually, let's use our custom start button logic to keep UI consistent with previous version
-            // but using the modern ARButton logic is safer. 
-            // Let's stick to the manual session request for better UI control as per original code structure,
-            // but adapted for module usage.
+            // 4. เพิ่มปุ่ม ARButton ที่หน้าจอ
+            document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+
+            // 5. สร้าง Reticle (วงกลมนำทาง)
+            // ใช้วงแหวนสีขาว เพื่อบอกตำแหน่งที่จะวาง
+            const geometry = new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2);
+            const material = new THREE.MeshBasicMaterial();
+            reticle = new THREE.Mesh(geometry, material);
+            reticle.matrixAutoUpdate = false;
+            reticle.visible = false; // ซ่อนไว้ก่อนจนกว่าจะเจอพื้น
+            scene.add(reticle);
+
+            // 6. จัดการ Controller (การแตะหน้าจอ)
+            controller = renderer.xr.getController(0);
+            controller.addEventListener('select', onSelect);
+            scene.add(controller);
+
+            window.addEventListener('resize', onWindowResize);
         }
 
-        // Re-implementing the custom start logic using modules
-        document.getElementById('startBtn').addEventListener('click', startAR);
-
-        // Expose functions to window for HTML onclick events
-        window.changeColor = (color) => {
-            currentColor = new THREE.Color(color);
-            updateStatus(`เปลี่ยนสีเป็น ${color}`);
-        };
-
-        window.clearAll = () => {
-            placedObjects.forEach(obj => {
-                scene.remove(obj);
-                if (obj.geometry) obj.geometry.dispose();
-                if (obj.material) obj.material.dispose();
-            });
-            placedObjects = [];
-            updateStatus('ล้างโมเดลทั้งหมดแล้ว');
-        };
-
-        async function startAR() {
-            if (!navigator.xr) {
-                alert('❌ เบราว์เซอร์นี้ไม่รองรับ WebXR');
-                return;
-            }
-
-            try {
-                const supported = await navigator.xr.isSessionSupported('immersive-ar');
-                if (!supported) {
-                    alert('❌ อุปกรณ์นี้ไม่รองรับ AR');
-                    return;
-                }
-
-                document.getElementById('startBtn').style.display = 'none';
-                updateStatus('กำลังเริ่ม AR...');
-
-                // Reticle
-                const reticleGeometry = new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2);
-                const reticleMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-                reticle = new THREE.Mesh(reticleGeometry, reticleMaterial);
-                reticle.matrixAutoUpdate = false;
-                reticle.visible = false;
-                scene.add(reticle);
-
-                // Session
-                const session = await navigator.xr.requestSession('immersive-ar', {
-                    requiredFeatures: ['hit-test'],
-                    optionalFeatures: ['dom-overlay'],
-                    domOverlay: { root: document.body }
-                });
-
-                session.addEventListener('end', () => {
-                    document.getElementById('startBtn').style.display = 'block';
-                    document.getElementById('controls').style.display = 'none';
-                    hitTestSourceRequested = false;
-                    hitTestSource = null;
-                });
-
-                session.addEventListener('select', onSelect);
-
-                await renderer.xr.setSession(session);
-
-                // Request hit test source once at start
-                const viewerSpace = await session.requestReferenceSpace('viewer');
-                hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
-
-                document.getElementById('controls').style.display = 'flex';
-                updateStatus('✅ พร้อมใช้งาน - จิ้มเพื่อวางวงกลม');
-
-                renderer.setAnimationLoop(render);
-
-            } catch (err) {
-                console.error(err);
-                alert('Error: ' + err.message);
-                document.getElementById('startBtn').style.display = 'block';
-            }
-        }
-
+        // ฟังก์ชันเมื่อแตะหน้าจอ
         function onSelect() {
             if (reticle.visible) {
-                // Create Circle instead of Sphere
-                const geometry = new THREE.CircleGeometry(0.1, 32);
-                const material = new THREE.MeshStandardMaterial({
-                    color: currentColor,
-                    roughness: 0.1,
-                    metalness: 0.1,
-                    side: THREE.DoubleSide // Visible from both sides
-                });
-                const circle = new THREE.Mesh(geometry, material);
+                // สร้างวงกลมสีส้ม (Cylinder แบนๆ)
+                const geometry = new THREE.CylinderGeometry(0.1, 0.1, 0.01, 32);
+                const material = new THREE.MeshPhongMaterial({ color: 0xff0000 }); // สีแดง
+                const mesh = new THREE.Mesh(geometry, material);
 
-                // Place at reticle position
-                circle.position.setFromMatrixPosition(reticle.matrix);
+                // ตั้งตำแหน่งตาม Reticle
+                reticle.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
 
-                // Rotate to lie flat (match reticle rotation)
-                circle.rotation.setFromRotationMatrix(reticle.matrix);
-                circle.geometry.rotateX(-Math.PI / 2);
-
-                scene.add(circle);
-                placedObjects.push(circle);
-
-                // Pop animation
-                let scale = 0;
-                const scaleInterval = setInterval(() => {
-                    scale += 0.1;
-                    circle.scale.set(scale, scale, scale);
-                    if (scale >= 1) {
-                        clearInterval(scaleInterval);
-                    }
-                }, 20);
-
-                updateStatus(`วางวงกลมแล้ว ${placedObjects.length} ชิ้น`);
+                scene.add(mesh);
             }
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            renderer.setAnimationLoop(render);
         }
 
         function render(timestamp, frame) {
             if (frame) {
+                // --- Logic ของ Hit Test ---
                 const referenceSpace = renderer.xr.getReferenceSpace();
+                const session = renderer.xr.getSession();
 
-                if (hitTestSource && referenceSpace) {
+                if (hitTestSourceRequested === false) {
+                    session.requestReferenceSpace('viewer').then(function (referenceSpace) {
+                        session.requestHitTestSource({ space: referenceSpace }).then(function (source) {
+                            hitTestSource = source;
+                        });
+                    });
+                    session.addEventListener('end', function () {
+                        hitTestSourceRequested = false;
+                        hitTestSource = null;
+                    });
+                    hitTestSourceRequested = true;
+                }
+
+                if (hitTestSource) {
                     const hitTestResults = frame.getHitTestResults(hitTestSource);
-                    if (hitTestResults.length) {
+
+                    if (hitTestResults.length > 0) {
                         const hit = hitTestResults[0];
+                        // ถ้าเจอพื้น ให้แสดง Reticle ที่จุดนั้น
                         reticle.visible = true;
                         reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
                     } else {
@@ -304,23 +141,8 @@
                     }
                 }
             }
-
             renderer.render(scene, camera);
         }
-
-        function updateStatus(message) {
-            const statusEl = document.getElementById('status');
-            if (statusEl) {
-                statusEl.textContent = message;
-                statusEl.style.display = 'block';
-            }
-        }
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
     </script>
 </body>
 
