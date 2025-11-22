@@ -58,8 +58,8 @@ export async function createVideoElement(t, targetIndex, modelIdx, assets) {
   const video = document.createElement("video");
   video.id = `video-${targetIndex}-${modelIdx}`;
   video.src = videoUrl;
-  video.autoplay = t.autoplay ?? false;
-  video.loop = t.loop ?? false;
+  video.autoplay = t.autoplay ?? true;
+  video.loop = t.loop ?? true;
   video.muted = t.muted ?? true;
   video.playsInline = true;
   assets.appendChild(video);
@@ -74,7 +74,17 @@ export async function createVideoElement(t, targetIndex, modelIdx, assets) {
   );
 
   // ตั้งค่า width/height ตาม aspect ratio
-  setVideoAspectRatio(videoEl, `video-${targetIndex}-${modelIdx}`);
+  if (!t.width || !t.height) {
+    setVideoAspectRatio(videoEl, `video-${targetIndex}-${modelIdx}`).then(
+      ({ width, height }) => {
+        videoEl.setAttribute("width", width);
+        videoEl.setAttribute("height", height);
+      }
+    );
+  } else {
+    videoEl.setAttribute("width", t.width);
+    videoEl.setAttribute("height", t.height);
+  }
 
   return videoEl;
 }
@@ -110,8 +120,17 @@ export function createImageElement(t, fadeIn = false) {
     "rotation",
     t.rotation ? convertToAframe(t.rotation, "rotation") : "0 0 0"
   );
+
   // ตั้งค่า width/height ตาม aspect ratio
-  setImageAspectRatio(img);
+  if (!t.width || !t.height) {
+    setImageAspectRatio(img).then(({ width, height }) => {
+      img.setAttribute("width", width);
+      img.setAttribute("height", height);
+    });
+  } else {
+    img.setAttribute("width", t.width);
+    img.setAttribute("height", t.height);
+  }
 
   if (fadeIn) {
     // เริ่มต้นด้วย opacity 0 แล้วค่อย fade in

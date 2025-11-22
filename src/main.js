@@ -8,7 +8,7 @@
  * 4. Load all assets to IndexedDB
  * 5. Redirect to tracking page
  */
-import { project_info } from "./make_data/project_info_face_2.js";
+import { project_info } from "./make_data/project_info_image_2.js";
 import { loadAssets } from "./utils/assetLoader.js";
 
 const SUPABASE_URL = "https://supabase.wemear.com/rest/v1/project_info";

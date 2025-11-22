@@ -3,29 +3,37 @@
  */
 
 /**
- * ตั้งค่า width/height สำหรับ a-image จาก texture ที่โหลดแล้ว
+ * คำนวณและ return width/height สำหรับ a-image จาก texture ที่โหลดแล้ว
+ * @returns Promise<{width: number, height: number}>
  */
 export function setImageAspectRatio(imageElement) {
-  imageElement.addEventListener("materialtextureloaded", (e) => {
-    const texture = e.target.components.material.material.map;
-    if (texture && texture.image) {
-      const aspectRatio = texture.image.width / texture.image.height;
-      imageElement.setAttribute("width", aspectRatio);
-      imageElement.setAttribute("height", 1);
-    }
+  return new Promise((resolve) => {
+    imageElement.addEventListener("materialtextureloaded", (e) => {
+      const texture = e.target.components.material.material.map;
+      if (texture && texture.image) {
+        const aspectRatio = texture.image.width / texture.image.height;
+        resolve({ width: aspectRatio, height: 1 });
+      } else {
+        resolve({ width: 1, height: 1 });
+      }
+    });
   });
 }
 
 /**
- * ตั้งค่า width/height สำหรับ a-video จาก video element ที่โหลดแล้ว
+ * คำนวณและ return width/height สำหรับ a-video จาก video element ที่โหลดแล้ว
+ * @returns Promise<{width: number, height: number}>
  */
 export function setVideoAspectRatio(videoElement, videoId) {
-  videoElement.addEventListener("materialtextureloaded", (e) => {
-    const videoAsset = document.getElementById(videoId);
-    if (videoAsset && videoAsset.videoWidth && videoAsset.videoHeight) {
-      const aspectRatio = videoAsset.videoWidth / videoAsset.videoHeight;
-      videoElement.setAttribute("width", aspectRatio);
-      videoElement.setAttribute("height", 1);
-    }
+  return new Promise((resolve) => {
+    videoElement.addEventListener("materialtextureloaded", (e) => {
+      const videoAsset = document.getElementById(videoId);
+      if (videoAsset && videoAsset.videoWidth && videoAsset.videoHeight) {
+        const aspectRatio = videoAsset.videoWidth / videoAsset.videoHeight;
+        resolve({ width: aspectRatio, height: 1 });
+      } else {
+        resolve({ width: 1, height: 1 });
+      }
+    });
   });
 }
