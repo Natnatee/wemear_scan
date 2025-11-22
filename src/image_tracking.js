@@ -40,6 +40,8 @@ function convertToRenderFormat(imageData, sceneId = "S1") {
       muted: asset.muted,
       autoplay: asset.autoplay,
       action: asset.action,
+      width: asset.width,
+      height: asset.height,
     }));
   });
 
@@ -224,12 +226,25 @@ export async function renderImageTracking({
         let element;
 
         if (asset.type === "Video") {
+          // สร้าง unique ID สำหรับ video ใหม่
+          const uniqueId = `video-${currentTrackIndex}-${i}-${sceneId}-${Date.now()}`;
           element = await createVideoElement(
             asset,
             currentTrackIndex,
             i,
-            assets
+            assets,
+            uniqueId
           );
+
+          // เล่น video หลังสร้างเสร็จ
+          setTimeout(() => {
+            const videoElement = document.getElementById(uniqueId);
+            if (videoElement) {
+              videoElement
+                .play()
+                .catch((err) => console.warn("Video play failed:", err));
+            }
+          }, 200);
         } else if (asset.type === "3D Model") {
           element = await create3DModelElement(asset);
         } else if (asset.type === "Image") {

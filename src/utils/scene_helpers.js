@@ -51,12 +51,21 @@ export function addLights(scene) {
 /**
  * สร้าง video element
  */
-export async function createVideoElement(t, targetIndex, modelIdx, assets) {
+export async function createVideoElement(
+  t,
+  targetIndex,
+  modelIdx,
+  assets,
+  uniqueId = null
+) {
   const videoBlob = await fetchAndCacheAsset(t.src);
   const videoUrl = URL.createObjectURL(videoBlob);
 
+  // สร้าง unique ID เพื่อไม่ให้ซ้ำกันเมื่อเปลี่ยน scene
+  const videoId = uniqueId || `video-${targetIndex}-${modelIdx}-${Date.now()}`;
+
   const video = document.createElement("video");
-  video.id = `video-${targetIndex}-${modelIdx}`;
+  video.id = videoId;
   video.src = videoUrl;
   video.autoplay = t.autoplay ?? true;
   video.loop = t.loop ?? true;
@@ -65,7 +74,7 @@ export async function createVideoElement(t, targetIndex, modelIdx, assets) {
   assets.appendChild(video);
 
   const videoEl = document.createElement("a-video");
-  videoEl.setAttribute("src", `#video-${targetIndex}-${modelIdx}`);
+  videoEl.setAttribute("src", `#${videoId}`);
   videoEl.setAttribute("scale", convertToAframe(t.scale, "scale"));
   videoEl.setAttribute("position", convertToAframe(t.position, "position"));
   videoEl.setAttribute(
@@ -73,18 +82,25 @@ export async function createVideoElement(t, targetIndex, modelIdx, assets) {
     t.rotation ? convertToAframe(t.rotation, "rotation") : "0 0 0"
   );
 
+  // ตั้งค่า video attributes สำหรับ a-video
+  videoEl.setAttribute("autoplay", t.autoplay ?? true);
+  videoEl.setAttribute("loop", t.loop ?? true);
+
   // ตั้งค่า width/height ตาม aspect ratio
   if (!t.width || !t.height) {
-    setVideoAspectRatio(videoEl, `video-${targetIndex}-${modelIdx}`).then(
-      ({ width, height }) => {
-        videoEl.setAttribute("width", width);
-        videoEl.setAttribute("height", height);
-      }
-    );
+    setVideoAspectRatio(videoEl, videoId).then(({ width, height }) => {
+      videoEl.setAttribute("width", width);
+      videoEl.setAttribute("height", height);
+    });
   } else {
     videoEl.setAttribute("width", t.width);
     videoEl.setAttribute("height", t.height);
   }
+
+  // เล่น video ทันทีหลังสร้าง
+  setTimeout(() => {
+    video.play().catch((err) => console.warn("Video autoplay failed:", err));
+  }, 100);
 
   return videoEl;
 }
